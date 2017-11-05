@@ -1,12 +1,14 @@
-module Main where
+module Main
+  ( module Main
+  ) where
 
-import Graphics.Rendering.OpenGL as GL
-import Graphics.UI.GLFW as GLFW
-import Display
-import Callbacks
-import Shaders
-import Square
-import Initializable
+import           Callbacks
+import           Display
+import           Graphics.Rendering.OpenGL as GL
+import           Graphics.UI.GLFW          as GLFW
+import           Initializable
+import           Shaders
+import           Square
 
 main :: IO ()
 main = do
@@ -22,5 +24,3 @@ main = do
   loop win [square]
   GLFW.destroyWindow win
   GLFW.terminate
-
-

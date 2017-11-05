@@ -1,8 +1,7 @@
-module Initializable where 
-
-import Descriptor
+module Initializable
+  ( module Initializable
+  ) where
 
 class Initializable a where
   create :: a -> IO a
   destroy :: a -> IO ()
-

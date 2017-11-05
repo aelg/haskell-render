@@ -1,30 +1,60 @@
 {-# LANGUAGE DeriveGeneric #-}
-module Shaders (Shaders(Shaders)) where
 
-import Initializable
-import ShaderLoader
+module Shaders
+  ( Shaders(Shaders)
+  ) where
+
+import           Data.Hashable
+import           Data.HashMap
+import           GHC.Generics              (Generic)
+import           Graphics.Rendering.OpenGL (($=))
 import qualified Graphics.Rendering.OpenGL as GL
-import Graphics.Rendering.OpenGL (($=))
-import Data.HashMap
-import Data.Hashable
-import GHC.Generics (Generic)
+import           Initializable
+import           ShaderLoader
 
-data Shaders = Shaders | ShadersData (Map ShaderProgram GL.Program)
+data Shaders
+  = Shaders
+  | ShadersData (Map ShaderProgram GL.Program)
 
-data ShaderProgram = Simple 
-                     deriving (Generic,Eq,Ord)
+data ShaderProgram
+  = Simple
+  | Normal
+  deriving (Generic, Eq, Ord)
+
 instance Hashable ShaderProgram
 
 setProgram :: Shaders -> ShaderProgram -> IO ()
-setProgram (ShadersData programs) shaderProgram = GL.currentProgram $= (Just $ programs ! shaderProgram)
+setProgram (ShadersData programs) shaderProgram =
+  GL.currentProgram $= (Just $ programs ! shaderProgram)
 
-instance Initializable Shaders where 
+simpleVertexFile = FileSource "shaders/simple_vertex_shader.glsl"
+
+simpleFragmentFile = FileSource "shaders/simple_fragment_shader.glsl"
+
+simpleShader =
+  [ ShaderInfo GL.VertexShader simpleVertexFile
+  , ShaderInfo GL.FragmentShader simpleFragmentFile
+  ]
+
+normalVertexFile = FileSource "shaders/vertex_shader.glsl"
+
+normalFragmentFile = FileSource "shaders/fragment_shader.glsl"
+
+normalShader =
+  [ ShaderInfo GL.VertexShader normalVertexFile
+  , ShaderInfo GL.FragmentShader normalFragmentFile
+  ]
+
+shaders = [(Simple, simpleShader), (Normal, normalShader)]
+
+load (a, shader) = do
+  program <- loadShaders shader
+  return (a, program)
+
+instance Initializable Shaders where
   create Shaders = do
-    program <- loadShaders [ ShaderInfo GL.VertexShader (FileSource "shaders/simple_vertex_shader.glsl")
-                           , ShaderInfo GL.FragmentShader (FileSource "shaders/simple_fragment_shader.glsl")
-                           ]
-    let shaders = ShadersData $ singleton Simple program
+    loadedShaders <- mapM load shaders
+    let shaders = ShadersData $ fromList loadedShaders
     setProgram shaders Simple
     return shaders
-
   destroy (ShadersData _) = return ()

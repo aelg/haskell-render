@@ -1,14 +1,14 @@
-module Display (loop) where
+module Display
+  ( loop
+  ) where
 
-import Graphics.Rendering.OpenGL as GL
-import Graphics.UI.GLFW as GLFW
-import Control.Monad
-import qualified Foreign.Ptr as Ptr
+import           Control.Monad
+import qualified Foreign.Ptr               as Ptr
+import           Graphics.Rendering.OpenGL as GL
+import           Graphics.UI.GLFW          as GLFW
 
-import Descriptor
-import Square
-import Drawable
-
+import           Drawable
+import           Square
 
 onDisplay :: Drawable a => Window -> [a] -> IO ()
 onDisplay win primitives = do
@@ -17,10 +17,8 @@ onDisplay win primitives = do
   mapM_ draw primitives
   GLFW.swapBuffers win
 
-
 loop :: Drawable a => Window -> [a] -> IO ()
-loop win primitives = 
+loop win primitives =
   forever $ do
     GLFW.pollEvents
     onDisplay win primitives
-
