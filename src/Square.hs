@@ -1,5 +1,5 @@
 module Square
-  ( Square(Square)
+  ( Square
   ) where
 
 import           Drawable
@@ -9,24 +9,23 @@ import qualified Foreign.Storable          as S
 import           Graphics.Rendering.OpenGL
 import           Initializable
 
-data Square
-  = Square
-  | SquareData VertexArrayObject
+data Square =
+  Square VertexArrayObject
 
 instance Initializable Square where
-  create Square = do
+  create = do
     square <- genObjectName
     bindVertexArrayObject $= Just square
     let vertices =
           map
-            (\(Vertex2 x y) -> Vertex2 (x * 0.8) (y * 0.8))
+            (\(Vertex2 x y) -> Vertex3 (x * 0.8) (y * 0.8) (-2.0))
             [ Vertex2 1.0 (-1.0)
             , Vertex2 1.0 1.0
             , Vertex2 (-1.0) 1.0
             , Vertex2 1.0 (-1.0)
             , Vertex2 (-1.0) 1.0
             , Vertex2 (-1.0) (-1.0)
-            ] :: [Vertex2 GLfloat]
+            ] :: [Vertex3 GLfloat]
         numVertices = length vertices
         firstIndex = 0
         vPosition = AttribLocation 0
@@ -36,14 +35,14 @@ instance Initializable Square where
       let size = fromIntegral (numVertices * S.sizeOf (head vertices))
       bufferData ArrayBuffer $= (size, ptr, StaticDraw)
     vertexAttribPointer vPosition $=
-      (ToFloat, VertexArrayDescriptor 2 Float 0 (bufferOffset firstIndex))
+      (ToFloat, VertexArrayDescriptor 3 Float 0 (bufferOffset firstIndex))
     vertexAttribArray vPosition $= Enabled
-    return $ SquareData square
+    return $ Square square
     where
       bufferOffset = Ptr.plusPtr Ptr.nullPtr . fromIntegral
-  destroy Square = return ()
+  destroy _ = return ()
 
 instance Drawable Square where
-  draw (SquareData square) = do
+  draw (Square square) = do
     bindVertexArrayObject $= Just square
     drawArrays Triangles 0 6

@@ -1,7 +1,10 @@
 {-# LANGUAGE DeriveGeneric #-}
 
 module Shaders
-  ( Shaders(Shaders)
+  ( Shaders
+  , ShaderProgram(..)
+  , activateProgram
+  , getProgram
   ) where
 
 import           Data.Hashable
@@ -12,20 +15,16 @@ import qualified Graphics.Rendering.OpenGL as GL
 import           Initializable
 import           ShaderLoader
 
-data Shaders
-  = Shaders
-  | ShadersData (Map ShaderProgram GL.Program)
+data Shaders =
+  Shaders (Map ShaderProgram GL.Program)
 
 data ShaderProgram
   = Simple
+  | SimpleFragment
   | Normal
   deriving (Generic, Eq, Ord)
 
 instance Hashable ShaderProgram
-
-setProgram :: Shaders -> ShaderProgram -> IO ()
-setProgram (ShadersData programs) shaderProgram =
-  GL.currentProgram $= (Just $ programs ! shaderProgram)
 
 simpleVertexFile = FileSource "shaders/simple_vertex_shader.glsl"
 
@@ -42,19 +41,37 @@ normalFragmentFile = FileSource "shaders/fragment_shader.glsl"
 
 normalShader =
   [ ShaderInfo GL.VertexShader normalVertexFile
-  , ShaderInfo GL.FragmentShader normalFragmentFile
+  , ShaderInfo GL.FragmentShader simpleFragmentFile
   ]
 
-shaders = [(Simple, simpleShader), (Normal, normalShader)]
+simpleFragmentShader =
+  [ ShaderInfo GL.VertexShader normalVertexFile
+  , ShaderInfo GL.FragmentShader simpleFragmentFile
+  ]
+
+shaders =
+  [ (Simple, simpleShader)
+  , (Normal, normalShader)
+  , (SimpleFragment, simpleFragmentShader)
+  ]
+
+activateProgram :: Shaders -> ShaderProgram -> IO GL.Program
+activateProgram shaders shaderProgram = do
+  let program = getProgram shaders shaderProgram
+  GL.currentProgram $= Just program
+  return program
+
+getProgram :: Shaders -> ShaderProgram -> GL.Program
+getProgram (Shaders programs) shaderProgram = programs ! shaderProgram
 
 load (a, shader) = do
   program <- loadShaders shader
   return (a, program)
 
 instance Initializable Shaders where
-  create Shaders = do
+  create = do
     loadedShaders <- mapM load shaders
-    let shaders = ShadersData $ fromList loadedShaders
-    setProgram shaders Simple
+    let shaders = Shaders $ fromList loadedShaders
+    activateProgram shaders Simple
     return shaders
-  destroy (ShadersData _) = return ()
+  destroy _ = return ()

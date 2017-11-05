@@ -3,5 +3,5 @@ module Initializable
   ) where
 
 class Initializable a where
-  create :: a -> IO a
+  create :: IO a
   destroy :: a -> IO ()

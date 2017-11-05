@@ -9,11 +9,8 @@ import           Graphics.UI.GLFW          as GLFW
 import           System.Exit               (ExitCode (..), exitSuccess)
 
 resizeWindow :: GLFW.WindowSizeCallback
-resizeWindow win w h = do
+resizeWindow win w h =
   GL.viewport $= (GL.Position 0 0, GL.Size (fromIntegral w) (fromIntegral h))
-  GL.matrixMode $= GL.Projection
-  GL.loadIdentity
-  GL.ortho2D 0 (realToFrac w) (realToFrac h) 0
 
 keyPressed :: GLFW.KeyCallback
 keyPressed win GLFW.Key'Escape _ GLFW.KeyState'Pressed _ = shutdown win
