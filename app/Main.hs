@@ -6,6 +6,7 @@ import Display
 import Callbacks
 import Shaders
 import Square
+import Initializable
 
 main :: IO ()
 main = do
@@ -16,9 +17,9 @@ main = do
   GLFW.setWindowSizeCallback win (Just resizeWindow)
   GLFW.setKeyCallback win (Just keyPressed)
   GLFW.setWindowCloseCallback win (Just shutdown)
-  initShaders
-  square <- initSquare
-  loop win square
+  _ <- create Shaders
+  square <- create Square
+  loop win [square]
   GLFW.destroyWindow win
   GLFW.terminate
 

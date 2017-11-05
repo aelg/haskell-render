@@ -7,29 +7,20 @@ import qualified Foreign.Ptr as Ptr
 
 import Descriptor
 import Square
+import Drawable
 
-draw :: Descriptor -> IO ()
-draw (Descriptor square firstIndex numVertices) = do 
-  let firstIndex = 0
-      vPosition = AttribLocation 0
-  vertexAttribPointer vPosition $= 
-    (ToFloat, VertexArrayDescriptor 2 Float 0 (bufferOffset firstIndex))
-  vertexAttribArray vPosition $= Enabled
-  bindVertexArrayObject $= Just square
-  drawArrays Triangles firstIndex numVertices
-  where bufferOffset = Ptr.plusPtr Ptr.nullPtr . fromIntegral
 
-onDisplay :: Window -> Descriptor -> IO ()
-onDisplay win square = do
+onDisplay :: Drawable a => Window -> [a] -> IO ()
+onDisplay win primitives = do
   GL.clearColor $= Color4 1 0 0 1
   GL.clear [ColorBuffer]
-  draw square
+  mapM_ draw primitives
   GLFW.swapBuffers win
 
 
-loop :: Window -> Descriptor -> IO ()
-loop win square = 
+loop :: Drawable a => Window -> [a] -> IO ()
+loop win primitives = 
   forever $ do
     GLFW.pollEvents
-    onDisplay win square
+    onDisplay win primitives
 
