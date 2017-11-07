@@ -15,12 +15,12 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Display
-                     , Callbacks
+  exposed-modules:     Callbacks
+                     , Drawable
+                     , Machine
                      , Square
                      , Shaders
                      , ShaderLoader
-                     , Drawable
                      , Initializable
   build-depends:       base >= 4.7 && < 5
                      , GLFW-b
@@ -40,6 +40,8 @@ executable hello
                      , hello
                      , GLFW-b
                      , OpenGL
+                     , OpenGLRaw
+                     , Vec
   default-language:    Haskell2010
 
 test-suite hello-test
