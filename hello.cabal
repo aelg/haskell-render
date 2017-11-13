@@ -22,6 +22,9 @@ library
                      , Shaders
                      , ShaderLoader
                      , Initializable
+                     , Application
+                     , Cmd
+                     , State
   build-depends:       base >= 4.7 && < 5
                      , GLFW-b
                      , OpenGL
@@ -30,6 +33,7 @@ library
                      , hashmap
                      , hashable
                      , Vec
+                     , containers
   default-language:    Haskell2010
 
 executable hello

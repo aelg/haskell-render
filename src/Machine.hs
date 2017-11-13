@@ -2,68 +2,27 @@ module Machine
   ( run
   , Config(DefaultConfig)
   , Application(Application)
-  , def
   , spaceBar
-  , Action
+  , doShutdown
   ) where
 
-import           Callbacks
 import qualified Control.Monad             as M
 import           Data.IORef
 import           Graphics.Rendering.OpenGL as GL
 import           Graphics.UI.GLFW          as GLFW
 import           Initializable
+import           Callbacks
 import           Shaders
 import           Square
-
-data (Action a, Show a) =>
-     Cmd a
-  = SpaceBar a
-  | NoCmd
-  deriving (Show)
-
-data Action b =>
-     State b a =
-  State ([Cmd b])
-        a
-
-instance Action b => Functor (State b) where
-  fmap f (State b a) = State b $ f a
-
-instance Action b => Applicative (State b) where
-  State b f <*> State c a = State c $ f a
-  pure = State [NoCmd]
-
-instance Action b => Monad (State b) where
-  State b a >>= f =
-    let State c d = f a
-    in State (b ++ c) d
-  return = pure
-
-class Action a where
-  def :: a
-
-data Action b =>
-     Application a b = Application
-  { update :: a -> b -> State b a
-  , view   :: Shaders -> a -> IO ()
-  }
+import           Application
+import           State
+import           Cmd
 
 data Config =
   DefaultConfig
 
 data Machine =
   Machine
-
-data NoAction =
-  NoAction
-
-instance Action NoAction where
-  def = NoAction
-
-data Action a =>
-     Internal a =
-  Internal a
 
 setupWin DefaultConfig = do
   GLFW.init
@@ -74,23 +33,29 @@ setupWin DefaultConfig = do
   GLFW.makeContextCurrent (Just win)
   return win
 
-setupCallbacks win = do
+escapePressed = (GLFW.Key'Escape, GLFW.KeyState'Pressed, noModifiers)
+
+setupCallbacks actions shutdownAction win = do
   GLFW.setWindowSizeCallback win (Just resizeWindow)
-  GLFW.setKeyCallback win (Just keyPressed)
+  GLFW.setKeyCallback win (Just (keyPressed actions (keyMap escapePressed shutdownAction initialKeyMap)))
   GLFW.setWindowCloseCallback win (Just shutdown)
 
-spaceBar :: (Show a, Action a) => a -> State a b -> State a b
+spaceBar :: (Show b) => b -> State b a -> State b a
 spaceBar action (State _ state) = State [SpaceBar action] state
 
+doShutdown :: State b a -> State b a
+doShutdown (State _ state) = State [Shutdown] state
+
 loop ::
-     (Show b, Action b)
-  => GLFW.Window
+     (Show b)
+  => IORef [b]
+  -> GLFW.Window
   -> Shaders
   -> Application a b
   -> State b a
   -> IO ()
-loop win shaders application (State _ state) = do
-  let State cmd1 state1 = update application state def
+loop actions win shaders application (State _ state) = do
+  let State cmd1 state1 = update application state (frameAction application)
       State cmd2 state2 =
         case cmd1 of
           [SpaceBar action] -> update application state action
@@ -99,16 +64,24 @@ loop win shaders application (State _ state) = do
   print cmd2
   -- Todo handle cmd
   GLFW.pollEvents
-  view application shaders state2
+  currentActions <- get actions
+  actions $= ([] :: [a])
+  State cmd3 state3 <- return $ M.foldM (update application) state2 currentActions
+  case cmd3 of
+     [Shutdown] -> shutdown win
+     otherwise  -> return ()
+  print currentActions
+  view application shaders state3
   GLFW.swapBuffers win
-  loop win shaders application $ State [NoCmd] state2
+  loop actions win shaders application $ State [NoCmd] state2
 
-run :: (Action b, Show b) => Config -> IO a -> Application a b -> IO ()
-run config initial application = do
+run :: (Show b) => Config -> IO a -> b -> Application a b -> IO ()
+run config initial shutdownAction application = do
   win <- setupWin config
-  setupCallbacks win
+  actions <- newIORef ([] :: [b])
+  setupCallbacks actions shutdownAction win
   shaders <- create
   state <- initial
-  loop win shaders application $ State [NoCmd] state
+  loop actions win shaders application $ State [NoCmd] state
   GLFW.destroyWindow win
   GLFW.terminate

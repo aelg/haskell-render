@@ -38,16 +38,15 @@ data MyState = MyState
 data MyAction
   = Frame
   | SwapColor
+  | Shutdown
   deriving (Show)
-
-instance Action MyAction where
-  def = Frame
 
 -- Update
 swapColor Blue  = Green
 swapColor Green = Blue
 
 update state Frame = spaceBar SwapColor $ return state
+update state Shutdown = doShutdown $ return state
 update (state@MyState {color = c}) SwapColor =
   return $ state {color = swapColor c}
 
@@ -84,4 +83,4 @@ initial = do
   return $ MyState [square] Green
 
 main :: IO ()
-main = run DefaultConfig initial (Application update view)
+main = run DefaultConfig initial Shutdown (Application update view Frame)
