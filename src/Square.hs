@@ -11,6 +11,7 @@ import           Initializable
 
 data Square =
   Square VertexArrayObject
+  deriving (Show)
 
 instance Initializable Square where
   create = do

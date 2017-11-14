@@ -49,28 +49,28 @@ setupCallbacks iState shutdownAction = do
           (keyMap escapePressed shutdownAction initialKeyMap)))
   GLFW.setWindowCloseCallback (win iState) (Just shutdown)
 
-spaceBar :: b -> a -> State b a
-spaceBar action = State [SpaceBar action]
+spaceBar :: b -> State b ()
+spaceBar action = State [SpaceBar action] ()
 
-doShutdown :: State b a -> State b a
-doShutdown (State _ state) = State [Shutdown] state
+doShutdown :: State b ()
+doShutdown = State [Shutdown] ()
 
-redraw :: a -> State b a
-redraw = State [Redraw]
+redraw :: State b ()
+redraw = State [Redraw] ()
 
-doPrint :: String -> a -> State b a
-doPrint s = State [Print s]
+doPrint :: String -> State b ()
+doPrint s = State [Print s] ()
 
-runIO :: IO b -> a -> State b a
-runIO f = State [RunIO f]
+runIO :: IO b -> State b ()
+runIO a = State [RunIO a] ()
 
 handleCmd :: InternalState a -> Cmd a -> IO ()
-handleCmd iState NoCmd             = return ()
-handleCmd iState Redraw            = return () -- --------!!!!!
-handleCmd iState Shutdown          = shutdown (win iState)
-handleCmd iState (Print s)         = putStrLn s
+handleCmd iState NoCmd = return ()
+handleCmd iState Redraw = return () -- --------!!!!!
+handleCmd iState Shutdown = shutdown (win iState)
+handleCmd iState (Print s) = putStrLn s
 handleCmd iState (SpaceBar action) = actions iState $~ (action :)
-handleCmd iState (RunIO a)         = a >>= \action -> actions iState $~ (action:)
+handleCmd iState (RunIO a) = a >>= \action -> actions iState $~ (action :)
 
 loop :: InternalState b -> Application a b -> State b a -> IO ()
 loop iState application (State cmds state) = do
