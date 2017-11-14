@@ -1,7 +1,8 @@
 module Cmd (Cmd(..)) where
 
-data (Show a) =>
-     Cmd a = SpaceBar a 
+data Cmd a = SpaceBar a 
      | Shutdown
-     | NoCmd deriving Show
+     | Redraw
+     | Print String
+     | NoCmd
 

@@ -46,7 +46,9 @@ swapColor Blue  = Green
 swapColor Green = Blue
 
 update state Frame = spaceBar SwapColor $ return state
-update state Shutdown = doShutdown $ return state
+update state Shutdown = do
+  doPrint "Will shutdown" state
+  doShutdown $ return state
 update (state@MyState {color = c}) SwapColor =
   return $ state {color = swapColor c}
 
@@ -78,9 +80,13 @@ view shaders (MyState primitives color) = do
   setMVP program mvpMatrix
   mapM_ draw primitives
 
-initial = do
+initState = do
   square <- create
-  return $ MyState [square] Green
+  return $ redraw $ MyState [square] Green
+
+myApplication = Application update view Frame
 
 main :: IO ()
-main = run DefaultConfig initial Shutdown (Application update view Frame)
+main = do
+  initial <- initState
+  run DefaultConfig initial Shutdown myApplication

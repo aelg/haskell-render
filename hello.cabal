@@ -25,6 +25,7 @@ library
                      , Application
                      , Cmd
                      , State
+                     , InternalState
   build-depends:       base >= 4.7 && < 5
                      , GLFW-b
                      , OpenGL

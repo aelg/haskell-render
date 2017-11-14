@@ -12,6 +12,7 @@ import           Graphics.UI.GLFW          as GLFW
 import           System.Exit               (ExitCode (..), exitSuccess)
 import qualified Data.Map.Lazy             as M
 import           Data.IORef
+import           InternalState
 
 resizeWindow :: GLFW.WindowSizeCallback
 resizeWindow win w h =
