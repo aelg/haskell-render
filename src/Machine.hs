@@ -6,20 +6,21 @@ module Machine
   , doShutdown
   , redraw
   , doPrint
+  , runIO
   ) where
 
+import           Application
+import           Callbacks
+import           Cmd
 import qualified Control.Monad             as M
 import           Data.IORef
 import           Graphics.Rendering.OpenGL as GL
 import           Graphics.UI.GLFW          as GLFW
 import           Initializable
-import           Callbacks
+import           InternalState
 import           Shaders
 import           Square
-import           Application
 import           State
-import           Cmd
-import           InternalState
 
 data Config =
   DefaultConfig
@@ -40,12 +41,16 @@ escapePressed = (GLFW.Key'Escape, GLFW.KeyState'Pressed, noModifiers)
 
 setupCallbacks iState shutdownAction = do
   GLFW.setWindowSizeCallback (win iState) (Just resizeWindow)
-  GLFW.setKeyCallback (win iState) 
-    (Just (keyPressed (actions iState) (keyMap escapePressed shutdownAction initialKeyMap)))
+  GLFW.setKeyCallback
+    (win iState)
+    (Just
+       (keyPressed
+          (actions iState)
+          (keyMap escapePressed shutdownAction initialKeyMap)))
   GLFW.setWindowCloseCallback (win iState) (Just shutdown)
 
-spaceBar :: (Show b) => b -> State b a -> State b a
-spaceBar action (State _ state) = State [SpaceBar action] state
+spaceBar :: b -> a -> State b a
+spaceBar action = State [SpaceBar action]
 
 doShutdown :: State b a -> State b a
 doShutdown (State _ state) = State [Shutdown] state
@@ -56,29 +61,30 @@ redraw = State [Redraw]
 doPrint :: String -> a -> State b a
 doPrint s = State [Print s]
 
-handleCmd :: InternalState a -> Cmd a -> IO ()
-handleCmd iState Shutdown = shutdown (win iState)
-handleCmd iState (Print s) = putStrLn s
-handleCmd iState (SpaceBar action) = actions iState $~ (action:)
+runIO :: IO b -> a -> State b a
+runIO f = State [RunIO f]
 
-loop ::
-     (Show b)
-  => InternalState b
-  -> Application a b
-  -> State b a
-  -> IO ()
-loop iState application (State _ state) = do
+handleCmd :: InternalState a -> Cmd a -> IO ()
+handleCmd iState NoCmd             = return ()
+handleCmd iState Redraw            = return () -- --------!!!!!
+handleCmd iState Shutdown          = shutdown (win iState)
+handleCmd iState (Print s)         = putStrLn s
+handleCmd iState (SpaceBar action) = actions iState $~ (action :)
+handleCmd iState (RunIO a)         = a >>= \action -> actions iState $~ (action:)
+
+loop :: InternalState b -> Application a b -> State b a -> IO ()
+loop iState application (State cmds state) = do
   GLFW.pollEvents
   currentActions <- get (actions iState)
   actions iState $= ([] :: [a])
-  State cmds newState <- return $ M.foldM (update application) state currentActions
-  mapM_ (handleCmd iState) cmds
-  print currentActions
-  (view application) (shaders iState) newState
+  State newCmds newState <-
+    return $ M.foldM (update application) state currentActions
+  mapM_ (handleCmd iState) (cmds ++ newCmds)
+  view application (shaders iState) newState
   GLFW.swapBuffers $ win iState
   loop iState application $ State [NoCmd] newState
 
-run :: (Show b) => Config -> State b a -> b -> Application a b -> IO ()
+run :: Config -> State b a -> b -> Application a b -> IO ()
 run config initial shutdownAction application = do
   win_ <- setupWin config
   actions_ <- newIORef ([] :: [b])

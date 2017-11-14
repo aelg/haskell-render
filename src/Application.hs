@@ -1,10 +1,12 @@
-module Application (Application(..)) where 
+module Application
+  ( Application(..)
+  ) where
 
-import State
-import Shaders
+import           Shaders
+import           State
 
 data Application a b = Application
-  { update :: a -> b -> State b a
-  , view   :: Shaders -> a -> IO ()
+  { update      :: a -> b -> State b a
+  , view        :: Shaders -> a -> IO ()
   , frameAction :: b
   }

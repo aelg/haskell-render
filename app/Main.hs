@@ -29,7 +29,7 @@ getColor Red   = GL.Color3 1.0 0.0 (0.0 :: GL.GLfloat)
 getColor Green = GL.Color3 0.0 1.0 (0.0 :: GL.GLfloat)
 getColor Blue  = GL.Color3 0.0 0.0 (1.0 :: GL.GLfloat)
 
-data MyState = MyState
+data MyState = Initial | MyState
   { primitives :: [Square]
   , color      :: Color
   }
@@ -39,18 +39,19 @@ data MyAction
   = Frame
   | SwapColor
   | Shutdown
-  deriving (Show)
+  | Initialize MyState
 
 -- Update
 swapColor Blue  = Green
 swapColor Green = Blue
 
-update state Frame = spaceBar SwapColor $ return state
+update state Frame = spaceBar SwapColor state
 update state Shutdown = do
   doPrint "Will shutdown" state
   doShutdown $ return state
 update (state@MyState {color = c}) SwapColor =
   return $ state {color = swapColor c}
+update _ (Initialize state) = redraw state
 
 --View
 setColor program color = do
@@ -79,14 +80,13 @@ view shaders (MyState primitives color) = do
   setColor program color
   setMVP program mvpMatrix
   mapM_ draw primitives
+view _ Initial = return ()
 
-initState = do
+initState = runIO (do
   square <- create
-  return $ redraw $ MyState [square] Green
+  return $ Initialize $ MyState [square] Green) Initial
 
 myApplication = Application update view Frame
 
 main :: IO ()
-main = do
-  initial <- initState
-  run DefaultConfig initial Shutdown myApplication
+main = run DefaultConfig initState Shutdown myApplication

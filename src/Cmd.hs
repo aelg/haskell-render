@@ -1,8 +1,11 @@
-module Cmd (Cmd(..)) where
+module Cmd
+  ( Cmd(..)
+  ) where
 
-data Cmd a = SpaceBar a 
-     | Shutdown
-     | Redraw
-     | Print String
-     | NoCmd
-
+data Cmd a
+  = SpaceBar a
+  | Shutdown
+  | Redraw
+  | Print String
+  | RunIO (IO a)
+  | NoCmd

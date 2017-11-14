@@ -1,6 +1,8 @@
-module State (State(..)) where
+module State
+  ( State(..)
+  ) where
 
-import Cmd
+import           Cmd
 
 data State b a =
   State [Cmd b]
@@ -18,4 +20,3 @@ instance Monad (State b) where
     let State c d = f a
     in State (b ++ c) d
   return = pure
-

@@ -1,9 +1,13 @@
-module InternalState (InternalState(..)) where
+module InternalState
+  ( InternalState(..)
+  ) where
 
-import qualified          Graphics.UI.GLFW          as GLFW
-import Shaders
-import Data.IORef
+import           Data.IORef
+import qualified Graphics.UI.GLFW as GLFW
+import           Shaders
 
-data InternalState a = InternalState {win :: GLFW.Window
- , actions :: IORef [a]
- , shaders :: Shaders}
+data InternalState a = InternalState
+  { win     :: GLFW.Window
+  , actions :: IORef [a]
+  , shaders :: Shaders
+  }
