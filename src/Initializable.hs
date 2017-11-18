@@ -1,5 +1,7 @@
 module Initializable
-  ( module Initializable
+  ( Initializable
+  , create
+  , destroy
   ) where
 
 class Initializable a where

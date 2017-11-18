@@ -1,5 +1,5 @@
 module Main
-  ( module Main
+  ( main
   ) where
 
 import           Control.Monad
@@ -62,7 +62,7 @@ update state Shutdown = do
   doPrint "Will shutdown"
   doShutdown
   return state
-update (state@MyState {color = c}) SwapColor = do
+update (state@MyState {color = c}) SwapColor =
   return $ state {color = swapColor c}
 update _ (Initial state) = return state
 

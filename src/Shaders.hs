@@ -15,7 +15,7 @@ import qualified Graphics.Rendering.OpenGL as GL
 import           Initializable
 import           ShaderLoader
 
-data Shaders =
+newtype Shaders =
   Shaders (Map ShaderProgram GL.Program)
 
 data ShaderProgram

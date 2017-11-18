@@ -2,8 +2,10 @@ module State
   ( State(..)
   ) where
 
-data Monoid b => State b a =
-  State b a
+data Monoid b =>
+     State b a =
+  State b
+        a
 
 instance Monoid b => Functor (State b) where
   fmap f (State b a) = State b $ f a

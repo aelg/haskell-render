@@ -7,7 +7,7 @@ import           Data.IORef
 import           Graphics.Rendering.OpenGL (($=), ($~))
 import qualified Graphics.Rendering.OpenGL as GL
 import qualified Graphics.UI.GLFW          as GLFW
-import qualified Keyboard                  as Keyboard
+import qualified Keyboard
 import           Shaders
 
 data Machine a = Machine
@@ -19,4 +19,3 @@ data Machine a = Machine
 
 addAction :: Machine a -> a -> IO ()
 addAction m action = actions m $~ (action :)
-

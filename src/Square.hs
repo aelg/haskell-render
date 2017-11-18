@@ -9,7 +9,7 @@ import qualified Foreign.Storable          as S
 import           Graphics.Rendering.OpenGL
 import           Initializable
 
-data Square =
+newtype Square =
   Square VertexArrayObject
   deriving (Show)
 

@@ -1,5 +1,6 @@
 module Drawable
-  ( module Drawable
+  ( Drawable
+  , draw
   ) where
 
 class Drawable a where

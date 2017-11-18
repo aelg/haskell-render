@@ -3,25 +3,25 @@ module Application
   , State
   , Cmd
   , run
-  , Config (..)
+  , Config(..)
   ) where
 
+import qualified Callbacks                 as Callback
+import           Cmd
 import qualified Control.Monad             as M
 import           Data.IORef
 import           Graphics.Rendering.OpenGL (($=), ($~))
 import qualified Graphics.Rendering.OpenGL as GL
 import qualified Graphics.UI.GLFW          as GLFW
-import qualified Callbacks                 as Callback
-import qualified Keyboard                  as Keyboard
+import           Initializable
+import qualified Keyboard
 import           Machine
 import           Shaders
 import           State
-import           Cmd
-import           Initializable
 
 data Application a b = Application
-  { update      :: a -> b -> State (Cmd b) a
-  , view        :: Shaders -> a -> IO ()
+  { update :: a -> b -> State (Cmd b) a
+  , view   :: Shaders -> a -> IO ()
   }
 
 data Config =
@@ -43,20 +43,18 @@ setupCallbacks m = do
     (Just $ Keyboard.keyPressed (addAction m) (keyMap m))
   GLFW.setWindowCloseCallback (win m) (Just Callback.shutdown)
 
-
 readActions :: Cmd a -> Machine a -> ([a] -> b) -> IO b
 readActions cmds m f = do
   a <- GL.get (actions m)
   actions m $= []
   b <- runCmd cmds m a
-  return (f (b))
+  return $ f b
 
 loop :: Machine b -> Application a b -> State (Cmd b) a -> IO ()
 loop m application (State cmds state) = do
   GLFW.pollEvents
-
-  State newCmds newState <- readActions cmds m $ M.foldM (update application) state
-
+  State newCmds newState <-
+    readActions cmds m $ M.foldM (update application) state
   view application (shaders m) newState
   GLFW.swapBuffers $ win m
   loop m application $ State newCmds newState
