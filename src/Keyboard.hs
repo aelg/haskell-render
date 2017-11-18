@@ -4,7 +4,7 @@ module Keyboard
   , keyActions
   , noModifiers
   , keyPressed
-  , empty
+  , noActions
   ) where
 
 import           Data.IORef
@@ -20,7 +20,7 @@ data KeyAction =
 
 type KeyActions = M.Map KeyAction
 
-empty = M.empty
+noActions = M.empty
 
 keyActions :: IORef (KeyActions a) -> [(KeyAction, a)] -> IO ()
 keyActions ref actions = do

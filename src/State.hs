@@ -2,21 +2,18 @@ module State
   ( State(..)
   ) where
 
-import           Cmd
+data Monoid b => State b a =
+  State b a
 
-data State b a =
-  State [Cmd b]
-        a
-
-instance Functor (State b) where
+instance Monoid b => Functor (State b) where
   fmap f (State b a) = State b $ f a
 
-instance Applicative (State b) where
-  State b f <*> State c a = State (b ++ c) $ f a
-  pure = State []
+instance Monoid b => Applicative (State b) where
+  State b f <*> State c a = State (b `mappend` c) $ f a
+  pure = State mempty
 
-instance Monad (State b) where
+instance Monoid b => Monad (State b) where
   State b a >>= f =
     let State c d = f a
-    in State (b ++ c) d
+    in State (b `mappend` c) d
   return = pure

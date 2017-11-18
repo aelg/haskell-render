@@ -12,8 +12,9 @@ import qualified Graphics.GL.Functions     as GLF
 import           Graphics.Rendering.OpenGL (($=))
 import qualified Graphics.Rendering.OpenGL as GL
 import qualified Graphics.UI.GLFW          as GLFW
-import           Machine
 
+import           Application
+import           Cmd
 import           Drawable
 import           Initializable
 import           Keyboard
@@ -50,12 +51,12 @@ data MyAction
 swapColor Blue  = Green
 swapColor Green = Blue
 
-updatePrinter :: MyState -> MyAction -> State MyAction MyState
+updatePrinter :: MyState -> MyAction -> State [Cmd MyAction] MyState
 updatePrinter a b = do
   doPrint $ show b
   update a b
 
-update :: MyState -> MyAction -> State MyAction MyState
+update :: MyState -> MyAction -> State [Cmd MyAction] MyState
 update state Frame = return state
 update state Shutdown = do
   doPrint "Will shutdown"
@@ -96,6 +97,7 @@ view shaders (MyState primitives color) = do
 keymap =
   [ (KeyAction GLFW.Key'Escape GLFW.KeyState'Pressed noModifiers, Shutdown)
   , (KeyAction GLFW.Key'Space GLFW.KeyState'Pressed noModifiers, SwapColor)
+  , (KeyAction GLFW.Key'Space GLFW.KeyState'Repeating noModifiers, SwapColor)
   ]
 
 setup = do
@@ -107,7 +109,7 @@ initState = do
   runIO setup
   return Empty
 
-myApplication = Application updatePrinter view Frame
+myApplication = Application updatePrinter view
 
 main :: IO ()
 main = run DefaultConfig initState myApplication
