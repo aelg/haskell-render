@@ -16,6 +16,7 @@ import           Machine
 
 import           Drawable
 import           Initializable
+import           Keyboard
 import           Shaders
 import           Square
 
@@ -31,7 +32,7 @@ getColor Green = GL.Color3 0.0 1.0 (0.0 :: GL.GLfloat)
 getColor Blue  = GL.Color3 0.0 0.0 (1.0 :: GL.GLfloat)
 
 data MyState
-  = Initial
+  = Empty
   | MyState { primitives :: [Square]
             , color      :: Color }
   deriving (Show)
@@ -41,26 +42,28 @@ data MyAction
   = Frame
   | SwapColor
   | Shutdown
-  | Initialize MyState
+  | Spacebar
+  | Initial MyState
   deriving (Show)
 
 -- Update
 swapColor Blue  = Green
 swapColor Green = Blue
 
+updatePrinter :: MyState -> MyAction -> State MyAction MyState
 updatePrinter a b = do
   doPrint $ show b
   update a b
 
-update state Frame = spaceBar SwapColor >> return state
+update :: MyState -> MyAction -> State MyAction MyState
+update state Frame = return state
 update state Shutdown = do
   doPrint "Will shutdown"
   doShutdown
   return state
 update (state@MyState {color = c}) SwapColor = do
-  spaceBar Frame
   return $ state {color = swapColor c}
-update _ (Initialize state) = spaceBar SwapColor >> return state
+update _ (Initial state) = return state
 
 --View
 setColor program color = do
@@ -89,15 +92,22 @@ view shaders (MyState primitives color) = do
   setColor program color
   setMVP program mvpMatrix
   mapM_ draw primitives
-view _ Initial = return ()
 
-initState =
-  runIO
-    (do square <- create
-        return $ Initialize $ MyState [square] Green) >>
-  return Initial
+keymap =
+  [ (KeyAction GLFW.Key'Escape GLFW.KeyState'Pressed noModifiers, Shutdown)
+  , (KeyAction GLFW.Key'Space GLFW.KeyState'Pressed noModifiers, SwapColor)
+  ]
+
+setup = do
+  square <- create
+  return $ Initial $ MyState [square] Green
+
+initState = do
+  keyPresses keymap
+  runIO setup
+  return Empty
 
 myApplication = Application updatePrinter view Frame
 
 main :: IO ()
-main = run DefaultConfig initState Shutdown myApplication
+main = run DefaultConfig initState myApplication

@@ -2,22 +2,23 @@ module Machine
   ( run
   , Config(DefaultConfig)
   , Application(Application)
-  , spaceBar
   , doShutdown
   , redraw
   , doPrint
   , runIO
+  , keyPresses
+  , State.State
   ) where
 
 import           Application
-import           Callbacks
+import qualified Callbacks                 as Callback
 import           Cmd
 import qualified Control.Monad             as M
 import           Data.IORef
 import           Graphics.Rendering.OpenGL as GL
 import           Graphics.UI.GLFW          as GLFW
 import           Initializable
-import           InternalState
+import qualified Keyboard                  as Keyboard
 import           Shaders
 import           Square
 import           State
@@ -25,8 +26,12 @@ import           State
 data Config =
   DefaultConfig
 
-data Machine =
-  Machine
+data Machine a = Machine
+  { win     :: GLFW.Window
+  , actions :: IORef [a]
+  , shaders :: Shaders
+  , keyMap  :: IORef (Keyboard.KeyActions a)
+  }
 
 setupWin DefaultConfig = do
   GLFW.init
@@ -37,60 +42,66 @@ setupWin DefaultConfig = do
   GLFW.makeContextCurrent (Just win)
   return win
 
-escapePressed = (GLFW.Key'Escape, GLFW.KeyState'Pressed, noModifiers)
-
-setupCallbacks iState shutdownAction = do
-  GLFW.setWindowSizeCallback (win iState) (Just resizeWindow)
+setupCallbacks m = do
+  GLFW.setWindowSizeCallback (win m) (Just Callback.resizeWindow)
   GLFW.setKeyCallback
-    (win iState)
-    (Just
-       (keyPressed
-          (actions iState)
-          (keyMap escapePressed shutdownAction initialKeyMap)))
-  GLFW.setWindowCloseCallback (win iState) (Just shutdown)
+    (win m)
+    (Just $ Keyboard.keyPressed (addAction m) (keyMap m))
+  GLFW.setWindowCloseCallback (win m) (Just Callback.shutdown)
 
-spaceBar :: b -> State b ()
-spaceBar action = State [SpaceBar action] ()
+addCmd :: Cmd b -> State b ()
+addCmd c = State [c] ()
 
 doShutdown :: State b ()
-doShutdown = State [Shutdown] ()
+doShutdown = addCmd Shutdown
 
 redraw :: State b ()
-redraw = State [Redraw] ()
+redraw = addCmd Redraw
 
 doPrint :: String -> State b ()
-doPrint s = State [Print s] ()
+doPrint s = addCmd $ Print s
 
 runIO :: IO b -> State b ()
-runIO a = State [RunIO a] ()
+runIO a = addCmd $ RunIO a
 
-handleCmd :: InternalState a -> Cmd a -> IO ()
-handleCmd iState NoCmd = return ()
-handleCmd iState Redraw = return () -- --------!!!!!
-handleCmd iState Shutdown = shutdown (win iState)
-handleCmd iState (Print s) = putStrLn s
-handleCmd iState (SpaceBar action) = actions iState $~ (action :)
-handleCmd iState (RunIO a) = a >>= \action -> actions iState $~ (action :)
+keyPresses :: [(Keyboard.KeyAction, b)] -> State b ()
+keyPresses actions = addCmd $ KeyPress actions
 
-loop :: InternalState b -> Application a b -> State b a -> IO ()
-loop iState application (State cmds state) = do
+addAction :: Machine a -> a -> IO ()
+addAction m action = actions m $~ (action :)
+
+handleCmd :: Machine a -> Cmd a -> IO ()
+handleCmd _ Redraw             = return () -- --------!!!!!
+handleCmd m Shutdown           = Callback.shutdown (win m)
+handleCmd _ (Print s)          = putStrLn s
+handleCmd m (KeyPress actions) = Keyboard.keyActions (keyMap m) actions
+handleCmd m (RunIO a)          = a >>= \action -> addAction m action
+
+readActions :: Machine a -> ([a] -> b) -> IO b
+readActions m f = do
+  a <- get (actions m)
+  actions m $= []
+  return (f a)
+
+loop :: Machine b -> Application a b -> State b a -> IO ()
+loop m application (State cmds state) = do
+  mapM_ (handleCmd m) (cmds)
   GLFW.pollEvents
-  currentActions <- get (actions iState)
-  actions iState $= ([] :: [a])
-  State newCmds newState <-
-    return $ M.foldM (update application) state currentActions
-  mapM_ (handleCmd iState) (cmds ++ newCmds)
-  view application (shaders iState) newState
-  GLFW.swapBuffers $ win iState
-  loop iState application $ State [NoCmd] newState
 
-run :: Config -> State b a -> b -> Application a b -> IO ()
-run config initial shutdownAction application = do
+  State newCmds newState <- readActions m $ M.foldM (update application) state
+
+  view application (shaders m) newState
+  GLFW.swapBuffers $ win m
+  loop m application $ State newCmds newState
+
+run :: Config -> State b a -> Application a b -> IO ()
+run config initial application = do
   win_ <- setupWin config
   actions_ <- newIORef ([] :: [b])
+  keyMap_ <- newIORef Keyboard.empty
   shaders_ <- create
-  let iState = InternalState win_ actions_ shaders_
-  setupCallbacks iState shutdownAction
-  loop iState application initial
+  let m = Machine win_ actions_ shaders_ keyMap_
+  setupCallbacks m
+  loop m application initial
   GLFW.destroyWindow win_
   GLFW.terminate
