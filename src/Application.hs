@@ -20,7 +20,7 @@ import           Cmd
 import           Initializable
 
 data Application a b = Application
-  { update      :: a -> b -> State [Cmd b] a
+  { update      :: a -> b -> State (Cmd b) a
   , view        :: Shaders -> a -> IO ()
   }
 
@@ -44,24 +44,24 @@ setupCallbacks m = do
   GLFW.setWindowCloseCallback (win m) (Just Callback.shutdown)
 
 
-readActions :: Machine a -> ([a] -> b) -> IO b
-readActions m f = do
+readActions :: Cmd a -> Machine a -> ([a] -> b) -> IO b
+readActions cmds m f = do
   a <- GL.get (actions m)
   actions m $= []
-  return (f a)
+  b <- runCmd cmds m a
+  return (f (b))
 
-loop :: Machine b -> Application a b -> State [Cmd b] a -> IO ()
+loop :: Machine b -> Application a b -> State (Cmd b) a -> IO ()
 loop m application (State cmds state) = do
-  mapM_ (handleCmd m) (cmds)
   GLFW.pollEvents
 
-  State newCmds newState <- readActions m $ M.foldM (update application) state
+  State newCmds newState <- readActions cmds m $ M.foldM (update application) state
 
   view application (shaders m) newState
   GLFW.swapBuffers $ win m
   loop m application $ State newCmds newState
 
-run :: Config -> State [Cmd b] a -> Application a b -> IO ()
+run :: Config -> State (Cmd b) a -> Application a b -> IO ()
 run config initial application = do
   win_ <- setupWin config
   actions_ <- newIORef ([] :: [b])

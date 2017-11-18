@@ -1,11 +1,10 @@
 module Cmd
   ( Cmd
-  , redraw
+  , runCmd
   , doPrint
   , runIO
   , keyPresses
   , doShutdown
-  , handleCmd
   ) where
 
 import           Keyboard
@@ -13,39 +12,22 @@ import State
 import Machine
 import qualified Callbacks as Callback
 
-data Cmd a
-  = KeyPress [(KeyAction, a)]
-  | Shutdown
-  | Redraw
-  | Print String
-  | RunIO (IO a)
-  | GetTime (Maybe Double -> a)
+data Cmd a = Cmd { runCmd :: Machine a -> [a] -> IO [a] }
 
-addCmd :: Cmd b -> State [Cmd b] ()
-addCmd c = State [c] ()
+instance Monoid (Cmd a) where
+  mempty = Cmd $ \m actions -> return actions
+  mappend a b = Cmd $ \m actions -> runCmd a m actions >>= runCmd b m
 
-doShutdown :: State [Cmd a] ()
-doShutdown = addCmd Shutdown
+wrap f = State (Cmd (f)) ()
 
-redraw :: State [Cmd a] ()
-redraw = addCmd Redraw
+doShutdown_ m a = Callback.shutdown (win m) >> return a
+doShutdown = wrap doShutdown_
 
-doPrint :: String -> State [Cmd a] ()
-doPrint s = addCmd $ Print s
+doPrint_ s m a = putStrLn s >> return a
+doPrint s = wrap $ doPrint_ s
 
-runIO :: IO a -> State [Cmd a] ()
-runIO a = addCmd $ RunIO a
+runIO_ io m a = (:a) <$> io
+runIO io = wrap $ runIO_ io
 
-keyPresses :: [(Keyboard.KeyAction, a)] -> State [Cmd a] ()
-keyPresses actions = addCmd $ KeyPress actions
-
-getTime :: (Double -> a) -> a -> State [Cmd a] ()
-getTime success fail = addCmd $ GetTime f
-
-handleCmd :: Machine a -> Cmd a -> IO ()
-handleCmd _ Redraw             = return () -- --------!!!!!
-handleCmd m Shutdown           = Callback.shutdown (win m)
-handleCmd _ (Print s)          = putStrLn s
-handleCmd m (KeyPress actions) = Keyboard.keyActions (keyMap m) actions
-handleCmd m (RunIO a)          = a >>= \action -> addAction m action
-
+keyPresses_ keys m a = Keyboard.keyActions (keyMap m) keys >> return a
+keyPresses keys = wrap $ keyPresses_ keys

@@ -51,12 +51,12 @@ data MyAction
 swapColor Blue  = Green
 swapColor Green = Blue
 
-updatePrinter :: MyState -> MyAction -> State [Cmd MyAction] MyState
+updatePrinter :: MyState -> MyAction -> State (Cmd MyAction) MyState
 updatePrinter a b = do
   doPrint $ show b
   update a b
 
-update :: MyState -> MyAction -> State [Cmd MyAction] MyState
+update :: MyState -> MyAction -> State (Cmd MyAction) MyState
 update state Frame = return state
 update state Shutdown = do
   doPrint "Will shutdown"
@@ -93,6 +93,7 @@ view shaders (MyState primitives color) = do
   setColor program color
   setMVP program mvpMatrix
   mapM_ draw primitives
+view _ Empty = return ()
 
 keymap =
   [ (KeyAction GLFW.Key'Escape GLFW.KeyState'Pressed noModifiers, Shutdown)
