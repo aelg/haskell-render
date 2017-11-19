@@ -4,7 +4,7 @@ module Machine
   ) where
 
 import           Data.IORef
-import           Graphics.Rendering.OpenGL (($=), ($~))
+import           Graphics.Rendering.OpenGL (($~))
 import qualified Graphics.Rendering.OpenGL as GL
 import qualified Graphics.UI.GLFW          as GLFW
 import qualified Keyboard

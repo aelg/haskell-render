@@ -35,7 +35,8 @@ getColor Blue  = GL.Color3 0.0 0.0 (1.0 :: GL.GLfloat)
 data MyState
   = Empty
   | MyState { primitives :: [Square]
-            , color      :: Color }
+            , color      :: Color
+            , lastSecond :: Double }
   deriving (Show)
 
 --Actions
@@ -45,6 +46,8 @@ data MyAction
   | Shutdown
   | Spacebar
   | Initial MyState
+  | Time Double
+  | TimeFail
   deriving (Show)
 
 -- Update
@@ -56,6 +59,8 @@ updatePrinter a b = do
   doPrint $ show b
   update a b
 
+doGetTime = getTime Time TimeFail
+
 update :: MyState -> MyAction -> State (Cmd MyAction) MyState
 update state Frame = return state
 update state Shutdown = do
@@ -64,7 +69,23 @@ update state Shutdown = do
   return state
 update (state@MyState {color = c}) SwapColor =
   return $ state {color = swapColor c}
-update _ (Initial state) = return state
+update (state@MyState {lastSecond = s}) (Time a) = do
+  doGetTime
+  if a > s
+    then do
+      send SwapColor
+      return $ state {lastSecond = s + 1}
+    else return state
+update state TimeFail = do
+  doPrint "Time: failed"
+  doGetTime
+  return state
+update _ (Initial state) = do
+  doGetTime
+  return state
+update state a = do
+  doPrint $ "Unhandled action: " ++ show a
+  return state
 
 --View
 setColor program color = do
@@ -86,7 +107,7 @@ setMVP program mvp = do
   with mvp $ GLF.glUniformMatrix4fv mvpUniform 1 (fromBool True) . Ptr.castPtr
 
 view :: Shaders -> MyState -> IO ()
-view shaders (MyState primitives color) = do
+view shaders (MyState primitives color _) = do
   GL.clearColor $= GL.Color4 1 0 0 1
   GL.clear [GL.ColorBuffer]
   program <- activateProgram shaders SimpleFragment
@@ -103,14 +124,14 @@ keymap =
 
 setup = do
   square <- create
-  return $ Initial $ MyState [square] Green
+  return $ Initial $ MyState [square] Green 0
 
 initState = do
   keyPresses keymap
   runIO setup
   return Empty
 
-myApplication = Application updatePrinter view
+myApplication = Application update view
 
 main :: IO ()
 main = run DefaultConfig initState myApplication
