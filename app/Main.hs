@@ -40,51 +40,56 @@ data MyState
   deriving (Show)
 
 --Actions
-data MyAction
-  = Frame
-  | SwapColor
-  | Shutdown
-  | Spacebar
-  | Initial MyState
-  | Time Double
-  | TimeFail
-  deriving (Show)
+--data MyAction
+--  = Frame
+--  | SwapColor
+--  | Shutdown
+--  | Spacebar
+--  | Initial MyState
+--  | Time Double
+--  | TimeFail
+--  deriving (Show)
+newtype Action = Action
+  { runAction :: MyState -> State (Cmd Action) MyState
+  }
+
+type Update a = State (Cmd Action) a
 
 -- Update
-swapColor Blue  = Green
-swapColor Green = Blue
+blueGreen Blue  = Green
+blueGreen Green = Blue
 
-updatePrinter :: MyState -> MyAction -> State (Cmd MyAction) MyState
-updatePrinter a b = do
-  doPrint $ show b
-  update a b
+run :: (MyState -> Update MyState) -> Action
+run f = Action $ \state -> f state
 
-doGetTime = getTime Time TimeFail
+run1 :: (a -> MyState -> Update MyState) -> a -> Action
+run1 f a = Action $ \state -> f a state
 
-update :: MyState -> MyAction -> State (Cmd MyAction) MyState
-update state Frame = return state
-update state Shutdown = do
+shutdown :: MyState -> Update MyState
+shutdown state = do
   doPrint "Will shutdown"
   doShutdown
   return state
-update (state@MyState {color = c}) SwapColor =
-  return $ state {color = swapColor c}
-update (state@MyState {lastSecond = s}) (Time a) = do
-  doGetTime
+
+swapColor :: MyState -> Update MyState
+swapColor (state@MyState {color = c}) = return $ state {color = blueGreen c}
+
+askTime :: Update ()
+askTime = getTime (run timeFail) (run1 gotTime)
+
+gotTime :: Double -> MyState -> Update MyState
+gotTime a (state@MyState {lastSecond = s}) = do
+  askTime
   if a > s
     then do
-      send SwapColor
+      send $ run swapColor
       return $ state {lastSecond = s + 1}
     else return state
-update state TimeFail = do
+
+timeFail :: MyState -> Update MyState
+timeFail state = do
+  askTime
   doPrint "Time: failed"
-  doGetTime
-  return state
-update _ (Initial state) = do
-  doGetTime
-  return state
-update state a = do
-  doPrint $ "Unhandled action: " ++ show a
   return state
 
 --View
@@ -117,21 +122,28 @@ view shaders (MyState primitives color _) = do
 view _ Empty = return ()
 
 keymap =
-  [ (KeyAction GLFW.Key'Escape GLFW.KeyState'Pressed noModifiers, Shutdown)
-  , (KeyAction GLFW.Key'Space GLFW.KeyState'Pressed noModifiers, SwapColor)
-  , (KeyAction GLFW.Key'Space GLFW.KeyState'Repeating noModifiers, SwapColor)
+  [ (KeyAction GLFW.Key'Escape GLFW.KeyState'Pressed noModifiers, run shutdown)
+  , (KeyAction GLFW.Key'Space GLFW.KeyState'Pressed noModifiers, run swapColor)
+  , ( KeyAction GLFW.Key'Space GLFW.KeyState'Repeating noModifiers
+    , run swapColor)
   ]
+
+initialAction :: MyState -> Action
+initialAction state =
+  Action $ \_ -> do
+    askTime
+    return state
 
 setup = do
   square <- create
-  return $ Initial $ MyState [square] Green 0
+  return $ initialAction $ MyState [square] Green 0
 
 initState = do
   keyPresses keymap
   runIO setup
   return Empty
 
-myApplication = Application update view
+myApplication = Application runAction view
 
 main :: IO ()
-main = run DefaultConfig initState myApplication
+main = start DefaultConfig initState myApplication

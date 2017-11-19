@@ -2,7 +2,7 @@ module Application
   ( Application(Application)
   , State
   , Cmd
-  , run
+  , start
   , Config(..)
   ) where
 
@@ -19,9 +19,9 @@ import           Machine
 import           Shaders
 import           State
 
-data Application a b = Application
-  { update :: a -> b -> State (Cmd b) a
-  , view   :: Shaders -> a -> IO ()
+data Application action state = Application
+  { update :: action -> state -> State (Cmd action) state
+  , view   :: Shaders -> state -> IO ()
   }
 
 data Config =
@@ -43,24 +43,28 @@ setupCallbacks m = do
     (Just $ Keyboard.keyPressed (addAction m) (keyMap m))
   GLFW.setWindowCloseCallback (win m) (Just Callback.shutdown)
 
-readActions :: Cmd a -> Machine a -> ([a] -> b) -> IO b
+readActions :: Cmd action -> Machine action -> ([action] -> state) -> IO state
 readActions cmds m f = do
   a <- GL.get (actions m)
   actions m $= []
   b <- runCmd cmds m a
   return $ f b
 
-loop :: Machine b -> Application a b -> State (Cmd b) a -> IO ()
+loop ::
+     Machine action
+  -> Application action state
+  -> State (Cmd action) state
+  -> IO ()
 loop m application (State cmds state) = do
   GLFW.pollEvents
   State newCmds newState <-
-    readActions cmds m $ M.foldM (update application) state
+    readActions cmds m $ M.foldM (flip (update application)) state
   view application (shaders m) newState
   GLFW.swapBuffers $ win m
   loop m application $ State newCmds newState
 
-run :: Config -> State (Cmd b) a -> Application a b -> IO ()
-run config initial application = do
+start :: Config -> State (Cmd action) state -> Application action state -> IO ()
+start config initial application = do
   win_ <- setupWin config
   actions_ <- newIORef ([] :: [b])
   keyMap_ <- newIORef Keyboard.noActions

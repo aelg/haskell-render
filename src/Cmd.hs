@@ -43,11 +43,11 @@ keyPresses' keys m a = Keyboard.keyActions (keyMap m) keys >> return a
 
 keyPresses keys = wrap $ keyPresses' keys
 
-getTime' success fail m a = do
+getTime' fail success m a = do
   time <- GLFW.getTime
   return (maybe fail success time) `append` a
 
-getTime success fail = wrap $ getTime' success fail
+getTime fail success = wrap $ getTime' fail success
 
 send' action m a = return action `append` a
 
