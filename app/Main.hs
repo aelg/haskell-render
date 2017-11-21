@@ -3,41 +3,17 @@ module Main
   ) where
 
 import           Control.Monad
-import           Data.Vec                  ((:.))
-import qualified Data.Vec                  as Vec
-import           Foreign.Marshal
-import qualified Foreign.Ptr               as Ptr
-import qualified Foreign.Storable          as S
-import qualified Graphics.GL.Functions     as GLF
-import           Graphics.Rendering.OpenGL (($=))
-import qualified Graphics.Rendering.OpenGL as GL
-import qualified Graphics.UI.GLFW          as GLFW
+import qualified Graphics.UI.GLFW      as GLFW
+import           Numeric.LinearAlgebra
 
 import           Application
 import           Cmd
-import           Drawable
 import           Initializable
 import           Keyboard
-import           Shaders
-import           Square
-
---State
-data Color
-  = Red
-  | Green
-  | Blue
-  deriving (Show)
-
-getColor Red   = GL.Color3 1.0 0.0 (0.0 :: GL.GLfloat)
-getColor Green = GL.Color3 0.0 1.0 (0.0 :: GL.GLfloat)
-getColor Blue  = GL.Color3 0.0 0.0 (1.0 :: GL.GLfloat)
-
-data MyState
-  = Empty
-  | MyState { primitives :: [Square]
-            , color      :: Color
-            , lastSecond :: Double }
-  deriving (Show)
+import           MyState
+import           Primitives.Square
+import           Primitives.Cube
+import           View
 
 --Actions
 --data MyAction
@@ -58,6 +34,9 @@ type Update a = State (Cmd Action) a
 -- Update
 blueGreen Blue  = Green
 blueGreen Green = Blue
+
+noRun :: Action
+noRun = Action $ \state -> return state
 
 run :: (MyState -> Update MyState) -> Action
 run f = Action $ \state -> f state
@@ -92,41 +71,28 @@ timeFail state = do
   doPrint "Time: failed"
   return state
 
---View
-setColor program color = do
-  colorUniform <- GL.uniformLocation program "color"
-  GL.uniform colorUniform $= getColor color
+moveSquare dir (state@MyState {squarePos = p}) =
+  return $ state {squarePos = p + dir}
 
---vec3 :: forall a a1 a2. a -> a1 -> a2 -> a :. (a1 :. (a2 :. ()))
---vec3 x y z = x Vec.:. y Vec.:. z Vec.:. ()
-mvpMatrix :: Vec.Mat44 GL.GLfloat
-mvpMatrix = Vec.multmm (Vec.multmm projection view) model
-  where
-    projection = Vec.perspective 0.1 100 (pi / 4) (4 / 3)
-    view = Vec.identity :: Vec.Mat44 GL.GLfloat --lookAt (vec3 4 3 3) (vec3 0 0 0) (vec3 0 1 0)
-    model = Vec.identity :: Vec.Mat44 GL.GLfloat
-
-setMVP :: GL.Program -> Vec.Mat44 GL.GLfloat -> IO ()
-setMVP program mvp = do
-  GL.UniformLocation mvpUniform <- GL.uniformLocation program "MVP"
-  with mvp $ GLF.glUniformMatrix4fv mvpUniform 1 (fromBool True) . Ptr.castPtr
-
-view :: Shaders -> MyState -> IO ()
-view shaders (MyState primitives color _) = do
-  GL.clearColor $= GL.Color4 1 0 0 1
-  GL.clear [GL.ColorBuffer]
-  program <- activateProgram shaders SimpleFragment
-  setColor program color
-  setMVP program mvpMatrix
-  mapM_ draw primitives
-view _ Empty = return ()
+pressedArrow (KeyPress GLFW.Key'Up _ _) = run $ moveSquare $ vector [0, 0.2, 0]
+pressedArrow (KeyPress GLFW.Key'Down _ _) =
+  run $ moveSquare $ vector [0, -0.2, 0]
+pressedArrow (KeyPress GLFW.Key'Left _ _) =
+  run $ moveSquare $ vector [-0.2, 0, 0]
+pressedArrow (KeyPress GLFW.Key'Right _ _) =
+  run $ moveSquare $ vector [0.2, 0, 0]
+pressedArrow _ = noRun
 
 keymap =
-  [ (KeyAction GLFW.Key'Escape GLFW.KeyState'Pressed noModifiers, run shutdown)
-  , (KeyAction GLFW.Key'Space GLFW.KeyState'Pressed noModifiers, run swapColor)
-  , ( KeyAction GLFW.Key'Space GLFW.KeyState'Repeating noModifiers
-    , run swapColor)
-  ]
+  concat
+    [ [(KeyPressed GLFW.Key'Escape (\_ -> run shutdown))]
+    , KeyState <$> [GLFW.Key'Space] <*>
+      [GLFW.KeyState'Pressed, GLFW.KeyState'Repeating] <*>
+      [(\_ -> run swapColor)]
+    , KeyState <$> [GLFW.Key'Up, GLFW.Key'Down, GLFW.Key'Right, GLFW.Key'Left] <*>
+      [GLFW.KeyState'Pressed, GLFW.KeyState'Repeating] <*>
+      [pressedArrow]
+    ]
 
 initialAction :: MyState -> Action
 initialAction state =
@@ -136,7 +102,9 @@ initialAction state =
 
 setup = do
   square <- create
-  return $ initialAction $ MyState [square] Green 0
+  cube <- create
+  let state = initialState {square = [square], cube = [cube]}
+  return $ initialAction $ state
 
 initState = do
   keyPresses keymap

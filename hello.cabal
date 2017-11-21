@@ -18,7 +18,6 @@ library
   exposed-modules:     Callbacks
                      , Drawable
                      , Machine
-                     , Square
                      , Shaders
                      , ShaderLoader
                      , Initializable
@@ -33,7 +32,6 @@ library
                      , bytestring
                      , hashmap
                      , hashable
-                     , Vec
                      , containers
                      , StateVar
   default-language:    Haskell2010
@@ -47,8 +45,14 @@ executable hello
                      , GLFW-b
                      , OpenGL
                      , OpenGLRaw
-                     , Vec
+                     , hmatrix
+  other-modules:       View
+                     , MyState
+                     , Matrix
+                     , Primitives.Square
+                     , Primitives.Cube
   default-language:    Haskell2010
+  extra-libraries:     cblas
 
 test-suite hello-test
   type:                exitcode-stdio-1.0

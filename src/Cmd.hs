@@ -27,28 +27,29 @@ wrap f = State (Cmd f) ()
 
 append f a = fmap (: a) f
 
-doShutdown' m a = Callback.shutdown (win m) >> return a
-
 doShutdown = wrap doShutdown'
-
-doPrint' s m a = putStrLn s >> return a
+  where
+    doShutdown' m a = Callback.shutdown (win m) >> return a
 
 doPrint s = wrap $ doPrint' s
-
-runIO' io m a = io `append` a
+  where
+    doPrint' s m a = putStrLn s >> return a
 
 runIO io = wrap $ runIO' io
+  where
+    runIO' io m a = io `append` a
 
-keyPresses' keys m a = Keyboard.keyActions (keyMap m) keys >> return a
-
+keyPresses :: [Keyboard.KeyAction a] -> State (Cmd a) ()
 keyPresses keys = wrap $ keyPresses' keys
-
-getTime' fail success m a = do
-  time <- GLFW.getTime
-  return (maybe fail success time) `append` a
+  where
+    keyPresses' keys m a = Keyboard.keyActions (keyMap m) keys >> return a
 
 getTime fail success = wrap $ getTime' fail success
-
-send' action m a = return action `append` a
+  where
+    getTime' fail success m a = do
+      time <- GLFW.getTime
+      return (maybe fail success time) `append` a
 
 send action = wrap $ send' action
+  where
+    send' action m a = return action `append` a
