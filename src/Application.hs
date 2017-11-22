@@ -6,7 +6,7 @@ module Application
   , Config(..)
   ) where
 
-import qualified Callbacks                 as Callback
+import           CallbackUpdater
 import           Cmd
 import qualified Control.Monad             as M
 import           Data.IORef
@@ -18,6 +18,7 @@ import qualified Keyboard
 import           Machine
 import           Shaders
 import           State
+import qualified Window                    as W
 
 data Application action state = Application
   { update :: action -> state -> State (Cmd action) state
@@ -37,31 +38,38 @@ setupWin DefaultConfig = do
   return win
 
 setupCallbacks m = do
-  GLFW.setWindowSizeCallback (win m) (Just Callback.resizeWindow)
+  wSize <- W.windowSizeCallback (\_ _ -> return ()) (win m)
+  wClose <- W.windowCloseCallback (return ()) (win m)
   GLFW.setKeyCallback
     (win m)
     (Just $ Keyboard.keyPressed (addAction m) (keyMap m))
-  GLFW.setWindowCloseCallback (win m) (Just Callback.shutdown)
+  return $ CallbackUpdater wSize wClose
 
-readActions :: Cmd action -> Machine action -> ([action] -> state) -> IO state
-readActions cmds m f = do
+readActions ::
+     Cmd action
+  -> Machine action
+  -> CallbackUpdater
+  -> ([action] -> state)
+  -> IO state
+readActions cmds m c f = do
   a <- GL.get (actions m)
   actions m $= []
-  b <- runCmd cmds m a
+  b <- runCmd cmds (Cmd.Input m c) a
   return $ f b
 
 loop ::
      Machine action
+  -> CallbackUpdater
   -> Application action state
   -> State (Cmd action) state
   -> IO ()
-loop m application (State cmds state) = do
+loop m c application (State cmds state) = do
   GLFW.pollEvents
   State newCmds newState <-
-    readActions cmds m $ M.foldM (flip (update application)) state
+    readActions cmds m c $ M.foldM (flip (update application)) state
   view application (shaders m) newState
   GLFW.swapBuffers $ win m
-  loop m application $ State newCmds newState
+  loop m c application $ State newCmds newState
 
 start :: Config -> State (Cmd action) state -> Application action state -> IO ()
 start config initial application = do
@@ -70,7 +78,7 @@ start config initial application = do
   keyMap_ <- newIORef Keyboard.noActions
   shaders_ <- create
   let m = Machine win_ actions_ shaders_ keyMap_
-  setupCallbacks m
-  loop m application initial
+  callbackUpdater <- setupCallbacks m
+  loop m callbackUpdater application initial
   GLFW.destroyWindow win_
   GLFW.terminate

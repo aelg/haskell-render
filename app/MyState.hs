@@ -5,8 +5,8 @@ module MyState
   ) where
 
 import           Numeric.LinearAlgebra
-import           Primitives.Square
 import           Primitives.Cube
+import           Primitives.Square
 
 --State
 data Color
@@ -17,13 +17,20 @@ data Color
 
 data MyState
   = Empty
-  | MyState { square     :: [Square]
-            , cube       :: [Cube]
-            , color      :: Color
-            , lastSecond :: Double
-            , squarePos  :: Vector Double }
+  | MyState { square      :: [Square]
+            , cube        :: [Cube]
+            , color       :: Color
+            , lastSecond  :: Double
+            , squarePos   :: Vector Double
+            , aspectRatio :: Double }
   deriving (Show)
 
 initialState =
   MyState
-  {square = [], cube = [], color = Green, lastSecond = 0, squarePos = vector [1, 0, 0]}
+  { square = []
+  , cube = []
+  , color = Green
+  , lastSecond = 0
+  , squarePos = vector [1, 0, 0]
+  , aspectRatio = 4 / 3
+  }

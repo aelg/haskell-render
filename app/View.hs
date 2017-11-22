@@ -23,12 +23,12 @@ setColor program color = do
   colorUniform <- GL.uniformLocation program "color"
   GL.uniform colorUniform $= getColor color
 
-pv = projection <> view
+pv aspectRatio = projection <> view
   where
-    projection = perspective 0.1 100.0 (pi / 4.0) (4.0 / 3.0)
+    projection = perspective 0.1 100.0 (pi / 4.0) aspectRatio
     view = translate $ vector [0, 0, -5] :: Matrix Double
 
-mvpMatrix pos = pv <> model
+mvpMatrix aspectRatio pos = pv aspectRatio <> model
   where
     model = translate pos :: Matrix Double
 
@@ -41,13 +41,13 @@ setMVP program mvp = do
       GLF.glUniformMatrix4fv uniform 1 (fromBool False) . Ptr.castPtr
 
 view :: Shaders -> MyState -> IO ()
-view shaders (MyState square cube color _ squarePos) = do
+view shaders (MyState square cube color _ squarePos aspectRatio) = do
   GL.clearColor $= GL.Color4 1 0 0 1
   GL.clear [GL.ColorBuffer]
   program <- activateProgram shaders SimpleFragment
   setColor program color
-  setMVP program (mvpMatrix squarePos)
+  setMVP program (mvpMatrix aspectRatio squarePos)
   --mapM_ draw square
-  setMVP program (mvpMatrix squarePos)
+  setMVP program (mvpMatrix aspectRatio squarePos)
   mapM_ draw cube
 view _ Empty = return ()

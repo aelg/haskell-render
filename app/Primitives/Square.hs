@@ -19,7 +19,7 @@ instance Initializable Square where
     bindVertexArrayObject $= Just square
     let vertices =
           map
-            (\(Vertex2 x y) -> Vertex3 (x * 1.0) (y * 1.0) (0.0))
+            (\(Vertex2 x y) -> Vertex3 (x * 1.0) (y * 1.0) 0.0)
             [ Vertex2 1.0 (-1.0)
             , Vertex2 1.0 1.0
             , Vertex2 (-1.0) 1.0

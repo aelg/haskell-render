@@ -11,8 +11,8 @@ import           Cmd
 import           Initializable
 import           Keyboard
 import           MyState
-import           Primitives.Square
 import           Primitives.Cube
+import           Primitives.Square
 import           View
 
 --Actions
@@ -43,6 +43,9 @@ run f = Action $ \state -> f state
 
 run1 :: (a -> MyState -> Update MyState) -> a -> Action
 run1 f a = Action $ \state -> f a state
+
+run2 :: (a -> b -> MyState -> Update MyState) -> a -> b -> Action
+run2 f a b = Action $ \state -> f a b state
 
 shutdown :: MyState -> Update MyState
 shutdown state = do
@@ -83,12 +86,16 @@ pressedArrow (KeyPress GLFW.Key'Right _ _) =
   run $ moveSquare $ vector [0.2, 0, 0]
 pressedArrow _ = noRun
 
+resize' :: Int -> Int -> MyState -> Update MyState
+resize' w h state =
+  return $ state {aspectRatio = fromIntegral w / fromIntegral h}
+
 keymap =
   concat
-    [ [(KeyPressed GLFW.Key'Escape (\_ -> run shutdown))]
+    [ [KeyPressed GLFW.Key'Escape (\_ -> run shutdown)]
     , KeyState <$> [GLFW.Key'Space] <*>
       [GLFW.KeyState'Pressed, GLFW.KeyState'Repeating] <*>
-      [(\_ -> run swapColor)]
+      [\_ -> run swapColor]
     , KeyState <$> [GLFW.Key'Up, GLFW.Key'Down, GLFW.Key'Right, GLFW.Key'Left] <*>
       [GLFW.KeyState'Pressed, GLFW.KeyState'Repeating] <*>
       [pressedArrow]
@@ -104,10 +111,11 @@ setup = do
   square <- create
   cube <- create
   let state = initialState {square = [square], cube = [cube]}
-  return $ initialAction $ state
+  return $ initialAction state
 
 initState = do
   keyPresses keymap
+  resize $ run2 resize'
   runIO setup
   return Empty
 
