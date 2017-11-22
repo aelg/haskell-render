@@ -43,7 +43,7 @@ setMVP program mvp = do
 view :: Shaders -> MyState -> IO ()
 view shaders (MyState square cube color _ squarePos aspectRatio) = do
   GL.clearColor $= GL.Color4 1 0 0 1
-  GL.clear [GL.ColorBuffer]
+  GL.clear [GL.ColorBuffer, GL.DepthBuffer]
   program <- activateProgram shaders SimpleFragment
   setColor program color
   setMVP program (mvpMatrix aspectRatio squarePos)

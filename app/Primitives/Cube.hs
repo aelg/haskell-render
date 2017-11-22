@@ -38,11 +38,24 @@ instance Initializable Cube where
         numVertices = length vertices
         firstIndex = 0
         vPosition = AttribLocation 0
-    print vertices
     arrayBuffer <- genObjectName -- Vertices
     bindBuffer ArrayBuffer $= Just arrayBuffer
     withArray vertices $ \ptr -> do
       let size = fromIntegral (numVertices * S.sizeOf (head vertices))
+      bufferData ArrayBuffer $= (size, ptr, StaticDraw)
+    vertexAttribPointer vPosition $=
+      (ToFloat, VertexArrayDescriptor 3 Float 0 (bufferOffset firstIndex))
+    vertexAttribArray vPosition $= Enabled
+    -- Add color
+    let color =
+          Vertex3 <$> [-1.0, 1.0] <*> [-1.0, 1.0] <*> [-1.0, 1.0] :: [Vertex3 GLfloat]
+        numColor = length color
+        firstIndex = 0
+        vPosition = AttribLocation 1
+    colorBuffer <- genObjectName -- Color
+    bindBuffer ArrayBuffer $= Just colorBuffer
+    withArray color $ \ptr -> do
+      let size = fromIntegral (numColor * S.sizeOf (head color))
       bufferData ArrayBuffer $= (size, ptr, StaticDraw)
     vertexAttribPointer vPosition $=
       (ToFloat, VertexArrayDescriptor 3 Float 0 (bufferOffset firstIndex))

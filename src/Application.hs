@@ -35,6 +35,7 @@ setupWin DefaultConfig = do
   GLFW.windowHint $ GLFW.WindowHint'OpenGLProfile GLFW.OpenGLProfile'Core
   Just win <- GLFW.createWindow 640 480 "GLFW" Nothing Nothing
   GLFW.makeContextCurrent (Just win)
+  GL.depthFunc $= Just GL.Less
   return win
 
 setupCallbacks m = do
