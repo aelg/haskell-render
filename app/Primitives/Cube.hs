@@ -15,6 +15,19 @@ data Cube =
        NumArrayIndices
   deriving (Show)
 
+{-
+     2+---------+6
+     /|        /|
+    / |       / |    y
+  3+---------+7 |    |
+   |  |      |  |    +--- x
+   | 0+------|-+4   /
+   | /       | /   z
+   |/        |/
+  1+---------+5
+
+-}
+
 instance Initializable Cube where
   create = do
     cube <- genObjectName -- VAO
@@ -35,7 +48,19 @@ instance Initializable Cube where
       (ToFloat, VertexArrayDescriptor 3 Float 0 (bufferOffset firstIndex))
     vertexAttribArray vPosition $= Enabled
     -- Add indices
-    let indices = [0, 1, 2, 1, 3, 2, 4, 1, 0, 1, 4, 5] :: [GLuint]
+    let indices = [ 0, 1, 2
+                  , 1, 3, 2
+                  , 4, 1, 0
+                  , 1, 4, 5
+                  , 0, 6, 4
+                  , 0, 2, 6
+                  , 5, 4, 6
+                  , 5, 6, 7
+                  , 1, 5, 7
+                  , 1, 7, 3
+                  , 3, 7, 6
+                  , 2, 3, 6
+                  ] :: [GLuint]
         numIndices = length indices
     indicesBuffer <- genObjectName -- Indices
     bindBuffer ElementArrayBuffer $= Just indicesBuffer
