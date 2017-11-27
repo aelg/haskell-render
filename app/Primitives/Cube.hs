@@ -28,6 +28,21 @@ data Cube =
   1+---------+5
 
 -}
+addAttribArray xs location = do
+  let num = length xs
+      firstIndex = 0
+      position = AttribLocation location
+  buffer <- genObjectName
+  bindBuffer ArrayBuffer $= Just buffer
+  withArray xs $ \ptr -> do
+    let size = fromIntegral (num * S.sizeOf (head xs))
+    bufferData ArrayBuffer $= (size, ptr, StaticDraw)
+  vertexAttribPointer position $=
+    (ToFloat, VertexArrayDescriptor 3 Float 0 (bufferOffset firstIndex))
+  vertexAttribArray position $= Enabled
+  where
+    bufferOffset = Ptr.plusPtr Ptr.nullPtr . fromIntegral
+
 instance Initializable Cube where
   create = do
     cube <- genObjectName -- VAO
@@ -36,32 +51,12 @@ instance Initializable Cube where
     let vertices =
           concat $
           replicate 3 $ Vertex3 <$> [-1.0, 1.0] <*> [-1.0, 1.0] <*> [-1.0, 1.0] :: [Vertex3 GLfloat]
-        numVertices = length vertices
-        firstIndex = 0
-        vPosition = AttribLocation 0
-    arrayBuffer <- genObjectName -- Vertices
-    bindBuffer ArrayBuffer $= Just arrayBuffer
-    withArray vertices $ \ptr -> do
-      let size = fromIntegral (numVertices * S.sizeOf (head vertices))
-      bufferData ArrayBuffer $= (size, ptr, StaticDraw)
-    vertexAttribPointer vPosition $=
-      (ToFloat, VertexArrayDescriptor 3 Float 0 (bufferOffset firstIndex))
-    vertexAttribArray vPosition $= Enabled
+    addAttribArray vertices 0
     -- Add color
     let color =
           concat $
           replicate 3 $ Vertex3 <$> [-1.0, 1.0] <*> [-1.0, 1.0] <*> [-1.0, 1.0] :: [Vertex3 GLfloat]
-        numColor = length color
-        firstIndex = 0
-        vColor = AttribLocation 1
-    colorBuffer <- genObjectName -- Color
-    bindBuffer ArrayBuffer $= Just colorBuffer
-    withArray color $ \ptr -> do
-      let size = fromIntegral (numColor * S.sizeOf (head color))
-      bufferData ArrayBuffer $= (size, ptr, StaticDraw)
-    vertexAttribPointer vColor $=
-      (ToFloat, VertexArrayDescriptor 3 Float 0 (bufferOffset firstIndex))
-    vertexAttribArray vColor $= Enabled
+    addAttribArray color 1
     -- Add normals
     let normals =
           concat
@@ -72,28 +67,18 @@ instance Initializable Cube where
             , replicate 4 $ Vertex3 0.0 (-1.0) 0.0
             , replicate 4 $ Vertex3 0.0 1.0 0.0
             ] :: [Vertex3 GLfloat]
-        numNormals = length color
-        firstIndex = 0
-        vNormal = AttribLocation 2
-    normalBuffer <- genObjectName -- Color
-    bindBuffer ArrayBuffer $= Just normalBuffer
-    withArray color $ \ptr -> do
-      let size = fromIntegral (numNormals * S.sizeOf (head color))
-      bufferData ArrayBuffer $= (size, ptr, StaticDraw)
-    vertexAttribPointer vNormal $=
-      (ToFloat, VertexArrayDescriptor 3 Float 0 (bufferOffset firstIndex))
-    vertexAttribArray vNormal $= Enabled
+    addAttribArray normals 2
     -- Add indices
     let indices =
           concat
             [ [0, 1, 2]
             , [1, 3, 2]
-            , [4, 5, 6]
-            , [5, 7, 6]
-            , [9, 11, 15]
-            , [9, 15, 13]
-            , [8, 10, 14]
-            , [8, 14, 12]
+            , [4, 6, 5]
+            , [5, 6, 7]
+            , [9, 15, 11] -- [1, 7, 3]
+            , [9, 13, 15] -- [1, 5, 7]
+            , [8, 10, 14] -- [0, 2, 6]
+            , [8, 14, 12] -- [0, 6, 4]
             , [16, 17, 20]
             , [17, 5, 20]
             , [18, 22, 23]
