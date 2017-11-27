@@ -16,7 +16,6 @@ data Cube =
   deriving (Show)
 
 --normals vertices indicies =
-
 {-
      2+---------+6
      /|        /|
@@ -29,14 +28,14 @@ data Cube =
   1+---------+5
 
 -}
-
 instance Initializable Cube where
   create = do
     cube <- genObjectName -- VAO
     bindVertexArrayObject $= Just cube
     -- Add vertices
     let vertices =
-          concat $ replicate 3 $ Vertex3 <$> [-1.0, 1.0] <*> [-1.0, 1.0] <*> [-1.0, 1.0] :: [Vertex3 GLfloat]
+          concat $
+          replicate 3 $ Vertex3 <$> [-1.0, 1.0] <*> [-1.0, 1.0] <*> [-1.0, 1.0] :: [Vertex3 GLfloat]
         numVertices = length vertices
         firstIndex = 0
         vPosition = AttribLocation 0
@@ -50,7 +49,8 @@ instance Initializable Cube where
     vertexAttribArray vPosition $= Enabled
     -- Add color
     let color =
-          concat $ replicate 3 $ Vertex3 <$> [-1.0, 1.0] <*> [-1.0, 1.0] <*> [-1.0, 1.0] :: [Vertex3 GLfloat]
+          concat $
+          replicate 3 $ Vertex3 <$> [-1.0, 1.0] <*> [-1.0, 1.0] <*> [-1.0, 1.0] :: [Vertex3 GLfloat]
         numColor = length color
         firstIndex = 0
         vColor = AttribLocation 1
@@ -64,13 +64,14 @@ instance Initializable Cube where
     vertexAttribArray vColor $= Enabled
     -- Add normals
     let normals =
-          concat $ [ replicate 4 $ Vertex3 (-1.0) 0.0 0.0
-                   , replicate 4 $ Vertex3 1.0 0.0 0.0
-                   , replicate 4 $ Vertex3 0.0 0.0 1.0
-                   , replicate 4 $ Vertex3 0.0 0.0 (-1.0)
-                   , replicate 4 $ Vertex3 0.0 (-1.0) 0.0
-                   , replicate 4 $ Vertex3 0.0 1.0 0.0
-                   ] :: [Vertex3 GLfloat]
+          concat
+            [ replicate 4 $ Vertex3 (-1.0) 0.0 0.0
+            , replicate 4 $ Vertex3 1.0 0.0 0.0
+            , replicate 4 $ Vertex3 0.0 0.0 1.0
+            , replicate 4 $ Vertex3 0.0 0.0 (-1.0)
+            , replicate 4 $ Vertex3 0.0 (-1.0) 0.0
+            , replicate 4 $ Vertex3 0.0 1.0 0.0
+            ] :: [Vertex3 GLfloat]
         numNormals = length color
         firstIndex = 0
         vNormal = AttribLocation 2
@@ -83,21 +84,21 @@ instance Initializable Cube where
       (ToFloat, VertexArrayDescriptor 3 Float 0 (bufferOffset firstIndex))
     vertexAttribArray vNormal $= Enabled
     -- Add indices
-    let indices = [ 0,1,2
-                  , 1,3,2
-                  , 4,5,6
-                  , 5,7,6
-
-                  ,9,11,15
-                  ,9,15,13
-                  ,8,10,14
-                  ,8,14,12
-
-                  ,16,17,20
-                  ,17,5,20
-                  ,18,22,23
-                  ,18,23,19
-                  ] :: [GLuint]
+    let indices =
+          concat
+            [ [0, 1, 2]
+            , [1, 3, 2]
+            , [4, 5, 6]
+            , [5, 7, 6]
+            , [9, 11, 15]
+            , [9, 15, 13]
+            , [8, 10, 14]
+            , [8, 14, 12]
+            , [16, 17, 20]
+            , [17, 5, 20]
+            , [18, 22, 23]
+            , [18, 23, 19]
+            ] :: [GLuint]
         numIndices = length indices
     indicesBuffer <- genObjectName -- Indices
     bindBuffer ElementArrayBuffer $= Just indicesBuffer

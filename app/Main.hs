@@ -15,16 +15,6 @@ import           Primitives.Cube
 import           Primitives.Square
 import           View
 
---Actions
---data MyAction
---  = Frame
---  | SwapColor
---  | Shutdown
---  | Spacebar
---  | Initial MyState
---  | Time Double
---  | TimeFail
---  deriving (Show)
 newtype Action = Action
   { runAction :: MyState -> Update MyState
   }
@@ -39,7 +29,7 @@ noRun :: Action
 noRun = Action return
 
 run :: (MyState -> Update MyState) -> Action
-run f = Action f
+run = Action
 
 run1 :: (a -> MyState -> Update MyState) -> a -> Action
 run1 f a = Action (f a)
@@ -86,6 +76,10 @@ pressedArrow (KeyPress GLFW.Key'Right _ _) =
   run $ moveSquare $ vector [0.2, 0, 0]
 pressedArrow _ = noRun
 
+mouseMoved x y state = do
+  doPrint $ "Mouse moved " ++ show x ++ " " ++ show y
+  return state
+
 resize' :: Int -> Int -> MyState -> Update MyState
 resize' w h state =
   return $ state {aspectRatio = fromIntegral w / fromIntegral h}
@@ -93,6 +87,10 @@ resize' w h state =
 keymap =
   concat
     [ [KeyPressed GLFW.Key'Escape (\_ -> run shutdown)]
+    , [ KeyPressed
+          GLFW.Key'M
+          (\_ -> run (\state -> stopCaptureMouse >> return state))
+      ]
     , KeyState <$> [GLFW.Key'Space] <*>
       [GLFW.KeyState'Pressed, GLFW.KeyState'Repeating] <*>
       [\_ -> run swapColor]
@@ -117,6 +115,7 @@ initState = do
   keyPresses keymap
   resize $ run2 resize'
   runIO setup
+  captureMouse $ run2 mouseMoved
   return Empty
 
 myApplication = Application runAction view

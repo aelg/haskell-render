@@ -5,6 +5,8 @@ module Cmd
   , doPrint
   , runIO
   , keyPresses
+  , captureMouse
+  , stopCaptureMouse
   , resize
   , doShutdown
   , getTime
@@ -15,6 +17,7 @@ import           CallbackUpdater
 import qualified Graphics.UI.GLFW as GLFW
 import           Keyboard
 import           Machine
+import qualified Mouse
 import           State
 import           System.Exit      (ExitCode (..), exitSuccess)
 import qualified Window           as W
@@ -75,6 +78,20 @@ resize action = wrap $ resize' action
       return a
     updateWindowSizeCallback' = updateWindowSize . callbackUpdater
     addAction' i = addAction $ machine i
+
+captureMouse :: (Double -> Double -> a) -> State (Cmd a) ()
+captureMouse action = wrap $ captureMouse' action
+  where
+    captureMouse' action i a =
+      Mouse.captureMouse
+        (win $ machine i)
+        (\x y -> (addAction (machine i) $ action x y)) >>
+      return a
+
+stopCaptureMouse :: State (Cmd a) ()
+stopCaptureMouse = wrap stopCaptureMouse'
+  where
+    stopCaptureMouse' i a = Mouse.freeMouse (win $ machine i) >> return a
 
 send action = wrap $ send' action
   where

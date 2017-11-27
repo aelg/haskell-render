@@ -26,6 +26,7 @@ library
                      , State
                      , Keyboard
   other-modules:       CallbackUpdater
+                     , Mouse
   build-depends:       base >= 4.7 && < 5
                      , GLFW-b
                      , OpenGL
