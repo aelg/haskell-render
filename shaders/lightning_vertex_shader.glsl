@@ -27,6 +27,7 @@ out float time;
 void main(){
     gl_Position = MVP * vec4(vertexPosition_modelspace,1);
     // Position of the vertex, in worldspace : M * position
+    //Position_worldspace = vec3(1.0, 1.0, 1.0);
     Position_worldspace = (M * vec4(vertexPosition_modelspace,1)).xyz;
 
     // Vector that goes from the vertex to the camera, in camera space.

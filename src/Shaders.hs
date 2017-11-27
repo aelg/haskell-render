@@ -35,13 +35,13 @@ simpleShader =
   , ShaderInfo GL.FragmentShader simpleFragmentFile
   ]
 
-normalVertexFile = FileSource "shaders/vertex_shader.glsl"
+normalVertexFile = FileSource "shaders/lightning_vertex_shader.glsl"
 
 normalFragmentFile = FileSource "shaders/fragment_shader.glsl"
 
 normalShader =
   [ ShaderInfo GL.VertexShader normalVertexFile
-  , ShaderInfo GL.FragmentShader simpleFragmentFile
+  , ShaderInfo GL.FragmentShader normalFragmentFile
   ]
 
 simpleFragmentShader =

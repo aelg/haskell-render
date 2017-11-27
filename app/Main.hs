@@ -26,7 +26,7 @@ import           View
 --  | TimeFail
 --  deriving (Show)
 newtype Action = Action
-  { runAction :: MyState -> State (Cmd Action) MyState
+  { runAction :: MyState -> Update MyState
   }
 
 type Update a = State (Cmd Action) a
@@ -36,16 +36,16 @@ blueGreen Blue  = Green
 blueGreen Green = Blue
 
 noRun :: Action
-noRun = Action $ \state -> return state
+noRun = Action return
 
 run :: (MyState -> Update MyState) -> Action
-run f = Action $ \state -> f state
+run f = Action f
 
 run1 :: (a -> MyState -> Update MyState) -> a -> Action
-run1 f a = Action $ \state -> f a state
+run1 f a = Action (f a)
 
 run2 :: (a -> b -> MyState -> Update MyState) -> a -> b -> Action
-run2 f a b = Action $ \state -> f a b state
+run2 f a b = Action (f a b)
 
 shutdown :: MyState -> Update MyState
 shutdown state = do
