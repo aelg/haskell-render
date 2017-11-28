@@ -55,17 +55,31 @@ instance Initializable Cube where
     -- Add color
     let color =
           concat $
-          replicate 3 $ Vertex3 <$> [-1.0, 1.0] <*> [-1.0, 1.0] <*> [-1.0, 1.0] :: [Vertex3 GLfloat]
+          replicate 3 $ Vertex3 <$> [0.0, 1.0] <*> [0.0, 1.0] <*> [0.0, 1.0] :: [Vertex3 GLfloat]
     addAttribArray color 1
     -- Add normals
-    let normals =
+    let normals
+          {--concat
+            [ Vertex3 <$> [0.0, 0.0] <*> [0.0, 0.0] <*> [1.0, -1.0]
+            , Vertex3 <$> [0.0, 0.0] <*> [-1.0, 1.0] <*> [0.0, 0.0]
+            , Vertex3 <$> [1.0, -1.0] <*> [0.0, 0.0] <*> [0.0, 0.0]
+            ] :: [Vertex3 GLfloat] --}
+         =
           concat
             [ replicate 4 $ Vertex3 (-1.0) 0.0 0.0
             , replicate 4 $ Vertex3 1.0 0.0 0.0
-            , replicate 4 $ Vertex3 0.0 0.0 1.0
-            , replicate 4 $ Vertex3 0.0 0.0 (-1.0)
-            , replicate 4 $ Vertex3 0.0 (-1.0) 0.0
-            , replicate 4 $ Vertex3 0.0 1.0 0.0
+            , replicate 1 $ Vertex3 0.0 0.0 (-1.0)
+            , replicate 1 $ Vertex3 0.0 0.0 1.0
+            , replicate 1 $ Vertex3 0.0 0.0 (-1.0)
+            , replicate 1 $ Vertex3 0.0 0.0 1.0
+            , replicate 1 $ Vertex3 0.0 0.0 (-1.0)
+            , replicate 1 $ Vertex3 0.0 0.0 1.0
+            , replicate 1 $ Vertex3 0.0 0.0 (-1.0)
+            , replicate 1 $ Vertex3 0.0 0.0 1.0
+            , replicate 2 $ Vertex3 0.0 (-1.0) 0.0
+            , replicate 2 $ Vertex3 0.0 1.0 0.0
+            , replicate 2 $ Vertex3 0.0 (-1.0) 0.0
+            , replicate 2 $ Vertex3 0.0 1.0 0.0
             ] :: [Vertex3 GLfloat]
     addAttribArray normals 2
     -- Add indices
@@ -79,10 +93,10 @@ instance Initializable Cube where
             , [9, 13, 15] -- [1, 5, 7]
             , [8, 10, 14] -- [0, 2, 6]
             , [8, 14, 12] -- [0, 6, 4]
-            , [16, 17, 20]
-            , [17, 5, 20]
-            , [18, 22, 23]
-            , [18, 23, 19]
+            , [16, 20, 17]
+            , [17, 20, 21]
+            , [18, 23, 22]
+            , [18, 19, 23]
             ] :: [GLuint]
         numIndices = length indices
     indicesBuffer <- genObjectName -- Indices

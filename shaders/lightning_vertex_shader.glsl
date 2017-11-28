@@ -1,4 +1,4 @@
-#version 310 es
+#version 330 core
 
 layout(location = 0) in vec3 vertexPosition_modelspace;
 layout(location = 1) in vec3 vertexColor;
@@ -8,7 +8,6 @@ layout(location = 3) in vec2 uv_vertex;
 uniform mat4 MVP;
 uniform mat4 M;
 uniform mat4 V;
-uniform mat4 P;
 uniform vec3 LightPosition_worldspace;
 uniform float time_vertex;
 uniform vec2 offset_vertex;
@@ -27,7 +26,6 @@ out float time;
 void main(){
     gl_Position = MVP * vec4(vertexPosition_modelspace,1);
     // Position of the vertex, in worldspace : M * position
-    //Position_worldspace = vec3(1.0, 1.0, 1.0);
     Position_worldspace = (M * vec4(vertexPosition_modelspace,1)).xyz;
 
     // Vector that goes from the vertex to the camera, in camera space.
@@ -44,6 +42,7 @@ void main(){
 
     // Distance from the vertex to light.
     fragmentColor = useVertexColor ? vertexColor : color;//vec3((vertexPosition_modelspace + 1)/2);
+    //fragmentColor = vertexPosition_cameraspace;
     UV = uv_vertex;
     time = time_vertex;
     offset = offset_vertex;

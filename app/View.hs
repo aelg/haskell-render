@@ -45,18 +45,10 @@ mvpMatrix aspectRatio cameraPos squareP =
 model :: Vector Double -> Matrix Double
 model = translate
 
-setMVP :: GL.Program -> Matrix Double -> IO ()
-setMVP program mvp = do
-  GL.UniformLocation mvpUniform <- GL.uniformLocation program "MVP"
-  withFloatMatrix mvp (setUniform mvpUniform)
-  where
-    setUniform uniform row cols =
-      GLF.glUniformMatrix4fv uniform 1 (fromBool False) . Ptr.castPtr
-
-squareP = vector [0.0, 0.0, -5.0] :: Vector Double
+cameraPos = vector [0.0, 0.0, -5.0] :: Vector Double
 
 view :: Shaders -> MyState -> IO ()
-view shaders (MyState square cube color _ cameraPos aspectRatio) = do
+view shaders (MyState square cube color _ squareP aspectRatio) = do
   GL.clearColor $= GL.Color4 0 0 0 1
   GL.clear [GL.ColorBuffer, GL.DepthBuffer]
   program <- activateProgram shaders Normal
@@ -65,10 +57,10 @@ view shaders (MyState square cube color _ cameraPos aspectRatio) = do
   setUniform
     program
     "LightPosition_worldspace"
-    (GL.Vertex3 0.0 0.0 (-2.0) :: GL.Vertex3 GL.GLfloat)
+    (GL.Vertex3 0.0 0.0 2.0 :: GL.Vertex3 GL.GLfloat)
+  print $ model squareP
   setUniformv program "M" (model squareP)
   setUniformv program "V" (viewMatrix cameraPos)
-  setUniformv program "P" (perspective 0.1 100.0 (pi / 4.0) aspectRatio)
-  setMVP program (mvpMatrix aspectRatio cameraPos squareP)
+  setUniformv program "MVP" (mvpMatrix aspectRatio cameraPos squareP)
   mapM_ draw cube
 view _ Empty = return ()

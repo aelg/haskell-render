@@ -31,6 +31,6 @@ initialState =
   , cube = []
   , color = Green
   , lastSecond = 0
-  , squarePos = vector [1, 0, 0]
+  , squarePos = vector [0, 0, 0]
   , aspectRatio = 4 / 3
   }
