@@ -7,8 +7,6 @@ module Matrix
   , translate
   ) where
 
-import           Control.Monad.ST
-import           Data.List
 import           Foreign.C.Types
 import           Foreign.Ptr
 import           Numeric.LinearAlgebra
@@ -43,5 +41,6 @@ translate v = ident 4 + build (4, 4) gen
 
 mmult a b = a <> b
 
-withFloatMatrix :: Matrix Double -> (CInt -> CInt -> Ptr Float -> IO r) -> IO r
-withFloatMatrix m = D.applyRaw (single m) id
+withFloatMatrix :: Matrix Double -> (D.MatrixOrder -> CInt -> CInt -> Ptr Float -> IO r) -> IO r
+withFloatMatrix m f = D.applyRaw singleM id (f (D.orderOf singleM))
+  where singleM = single m

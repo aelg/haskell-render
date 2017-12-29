@@ -48,9 +48,12 @@ executable hello
                      , OpenGL
                      , OpenGLRaw
                      , hmatrix
+                     , microlens-th
+                     , microlens-platform
   other-modules:       View
                      , MyState
                      , Matrix
+                     , Uniform
                      , Primitives.Square
                      , Primitives.Cube
   default-language:    Haskell2010

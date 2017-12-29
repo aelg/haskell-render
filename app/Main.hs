@@ -5,6 +5,7 @@ module Main
 import           Control.Monad
 import qualified Graphics.UI.GLFW      as GLFW
 import           Numeric.LinearAlgebra
+import           Lens.Micro.Platform ((&), (%~), (.~), (^.))
 
 import           Application
 import           Cmd
@@ -44,18 +45,18 @@ shutdown state = do
   return state
 
 swapColor :: MyState -> Update MyState
-swapColor (state@MyState {color = c}) = return $ state {color = blueGreen c}
+swapColor state = return $ state & color %~ blueGreen
 
 askTime :: Update ()
 askTime = getTime (run timeFail) (run1 gotTime)
 
 gotTime :: Double -> MyState -> Update MyState
-gotTime a (state@MyState {lastSecond = s}) = do
+gotTime a state = do
   askTime
-  if a > s
+  if a > state ^. lastSecond
     then do
       send $ run swapColor
-      return $ state {lastSecond = s + 1}
+      return $ state & lastSecond %~ (+1)
     else return state
 
 timeFail :: MyState -> Update MyState
@@ -64,8 +65,8 @@ timeFail state = do
   doPrint "Time: failed"
   return state
 
-moveSquare dir (state@MyState {squarePos = p}) =
-  return $ state {squarePos = p + dir}
+moveSquare dir state =
+  return $ state & squarePos %~ (+ dir)
 
 pressedArrow (KeyPress GLFW.Key'Up _ _) = run $ moveSquare $ vector [0, 0.2, 0]
 pressedArrow (KeyPress GLFW.Key'Down _ _) =
@@ -76,13 +77,26 @@ pressedArrow (KeyPress GLFW.Key'Right _ _) =
   run $ moveSquare $ vector [0.2, 0, 0]
 pressedArrow _ = noRun
 
+moveCamera dir state =
+  return $ state & cameraPos %~ (+ dir)
+
+pressedWASD (KeyPress GLFW.Key'W _ _) =
+  run $ moveCamera $ vector [0, 0, -0.2]
+pressedWASD (KeyPress GLFW.Key'S _ _) =
+  run $ moveCamera $ vector [0, 0, 0.2]
+pressedWASD (KeyPress GLFW.Key'A _ _) =
+  run $ moveCamera $ vector [-0.2, 0, 0]
+pressedWASD (KeyPress GLFW.Key'D _ _) =
+  run $ moveCamera $ vector [0.2, 0, 0]
+pressedWASD _ = noRun
+
 mouseMoved x y state = do
   doPrint $ "Mouse moved " ++ show x ++ " " ++ show y
   return state
 
 resize' :: Int -> Int -> MyState -> Update MyState
 resize' w h state =
-  return $ state {aspectRatio = fromIntegral w / fromIntegral h}
+  return $ state & aspectRatio .~ fromIntegral w / fromIntegral h
 
 keymap =
   concat
@@ -97,6 +111,9 @@ keymap =
     , KeyState <$> [GLFW.Key'Up, GLFW.Key'Down, GLFW.Key'Right, GLFW.Key'Left] <*>
       [GLFW.KeyState'Pressed, GLFW.KeyState'Repeating] <*>
       [pressedArrow]
+    , KeyState <$> [GLFW.Key'W, GLFW.Key'A, GLFW.Key'S, GLFW.Key'D] <*>
+      [GLFW.KeyState'Pressed, GLFW.KeyState'Repeating] <*>
+      [pressedWASD]
     ]
 
 initialAction :: MyState -> Action
@@ -108,7 +125,7 @@ initialAction state =
 setup = do
   square <- create
   cube <- create
-  let state = initialState {square = [square], cube = [cube]}
+  let state = initialState & squares .~ [square] & cubes .~ [cube]
   return $ initialAction state
 
 initState = do
@@ -116,7 +133,7 @@ initState = do
   resize $ run2 resize'
   runIO setup
   captureMouse $ run2 mouseMoved
-  return Empty
+  return initialState
 
 myApplication = Application runAction view
 

@@ -2,42 +2,30 @@ module View
   ( view
   ) where
 
-import           Foreign.Marshal
-import qualified Foreign.Ptr               as Ptr
-import qualified Graphics.GL.Functions     as GLF
 import           Graphics.Rendering.OpenGL (($=))
 import qualified Graphics.Rendering.OpenGL as GL
 import           Matrix
 import           Numeric.LinearAlgebra
+import           Lens.Micro.Platform ((^.))
 
 import           Drawable
 import           MyState
 import           Shaders
+import           Uniform
 
 getColor Red   = GL.Color3 1.0 0.0 (0.0 :: GL.GLfloat)
 getColor Green = GL.Color3 0.0 1.0 (0.0 :: GL.GLfloat)
 getColor Blue  = GL.Color3 0.0 0.0 (1.0 :: GL.GLfloat)
 
 --View
-setColor program color = do
-  colorUniform <- GL.uniformLocation program "color"
-  GL.uniform colorUniform $= getColor color
-
-setUniform program name value = do
-  uniform <- GL.uniformLocation program name
-  GL.uniform uniform $= value
-
-setUniformv :: GL.Program -> String -> Matrix Double -> IO ()
-setUniformv program name value = do
-  GL.UniformLocation uniform <- GL.uniformLocation program name
-  withFloatMatrix value $ \rows cols ->
-    GLF.glUniformMatrix4fv uniform 1 (fromBool False) . Ptr.castPtr
+setColor program color = setUniform program "color" $ getColor color
 
 pv aspectRatio cameraPos = projection <> viewMatrix cameraPos
   where
     projection = perspective 0.1 100.0 (pi / 4.0) aspectRatio
 
-viewMatrix pos = translate pos :: Matrix Double
+viewMatrix :: Vector Double -> Matrix Double
+viewMatrix = translate . cmap negate
 
 mvpMatrix aspectRatio cameraPos squareP =
   pv aspectRatio cameraPos <> model squareP
@@ -45,22 +33,20 @@ mvpMatrix aspectRatio cameraPos squareP =
 model :: Vector Double -> Matrix Double
 model = translate
 
-cameraPos = vector [0.0, 0.0, -5.0] :: Vector Double
+lightPosition = GL.Vertex3 0.0 0.0 1.01 :: GL.Vertex3 GL.GLfloat
+
+reset =
+  GL.clearColor $= GL.Color4 0 0 0 1 >>
+  GL.clear [GL.ColorBuffer, GL.DepthBuffer]
 
 view :: Shaders -> MyState -> IO ()
-view shaders (MyState square cube color _ squareP aspectRatio) = do
-  GL.clearColor $= GL.Color4 0 0 0 1
-  GL.clear [GL.ColorBuffer, GL.DepthBuffer]
+view shaders state = do
+  reset
   program <- activateProgram shaders Normal
-  setColor program color
+  setColor program $ state ^. color
   setUniform program "useVertexColor" (1 :: GL.GLuint)
-  setUniform
-    program
-    "LightPosition_worldspace"
-    (GL.Vertex3 0.0 0.0 2.0 :: GL.Vertex3 GL.GLfloat)
-  print $ model squareP
-  setUniformv program "M" (model squareP)
-  setUniformv program "V" (viewMatrix cameraPos)
-  setUniformv program "MVP" (mvpMatrix aspectRatio cameraPos squareP)
-  mapM_ draw cube
-view _ Empty = return ()
+  setUniform program "LightPosition_worldspace" lightPosition
+  setUniform4fv program "M" (model $ state ^. squarePos)
+  setUniform4fv program "V" (viewMatrix $ state ^. cameraPos)
+  setUniform4fv program "MVP" (mvpMatrix (state ^. aspectRatio) (state ^. cameraPos) (state ^. squarePos))
+  mapM_ draw $ state ^. cubes
