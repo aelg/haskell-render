@@ -2,11 +2,13 @@ module View
   ( view
   ) where
 
-import           Graphics.Rendering.OpenGL (($=))
-import qualified Graphics.Rendering.OpenGL as GL
+import           Graphics.Rendering.OpenGL    (($=))
+import qualified Graphics.Rendering.OpenGL    as GL
+import           Lens.Micro.Platform          ((^.))
 import           Matrix
-import           Numeric.LinearAlgebra
-import           Lens.Micro.Platform ((^.))
+
+--import           Numeric.LinearAlgebra
+import           Numeric.LinearAlgebra.Static
 
 import           Drawable
 import           MyState
@@ -20,17 +22,12 @@ getColor Blue  = GL.Color3 0.0 0.0 (1.0 :: GL.GLfloat)
 --View
 setColor program color = setUniform program "color" $ getColor color
 
-pv aspectRatio cameraPos = projection <> viewMatrix cameraPos
+viewMatrix :: Camera -> Matrix4
+viewMatrix camera = translation
   where
-    projection = perspective 0.1 100.0 (pi / 4.0) aspectRatio
+    translation = translate . (* (-1)) $ camera ^. cameraPosition
 
-viewMatrix :: Vector Double -> Matrix Double
-viewMatrix = translate . cmap negate
-
-mvpMatrix aspectRatio cameraPos squareP =
-  pv aspectRatio cameraPos <> model squareP
-
-model :: Vector Double -> Matrix Double
+model :: Vector3 -> Matrix4
 model = translate
 
 lightPosition = GL.Vertex3 0.0 0.0 1.01 :: GL.Vertex3 GL.GLfloat
@@ -46,7 +43,11 @@ view shaders state = do
   setColor program $ state ^. color
   setUniform program "useVertexColor" (1 :: GL.GLuint)
   setUniform program "LightPosition_worldspace" lightPosition
-  setUniform4fv program "M" (model $ state ^. squarePos)
-  setUniform4fv program "V" (viewMatrix $ state ^. cameraPos)
-  setUniform4fv program "MVP" (mvpMatrix (state ^. aspectRatio) (state ^. cameraPos) (state ^. squarePos))
+  let m = model $ state ^. squarePos
+      v = viewMatrix $ state ^. camera
+      p = projection $ state ^. aspectRatio
+      mvp = p <> v <> m
+  setUniform4fv program "M" m
+  setUniform4fv program "V" v
+  setUniform4fv program "MVP" mvp
   mapM_ draw $ state ^. cubes

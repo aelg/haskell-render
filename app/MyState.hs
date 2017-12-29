@@ -1,4 +1,5 @@
 {-# LANGUAGE TemplateHaskell #-}
+
 module MyState
   ( MyState
   , Color(..)
@@ -8,14 +9,20 @@ module MyState
   , color
   , lastSecond
   , squarePos
-  , cameraPos
+  , camera
   , aspectRatio
+  , Camera
+  , cameraLookAt
+  , cameraPosition
   ) where
 
-import           Numeric.LinearAlgebra
+import           Lens.Micro.TH
+
+--import           Numeric.LinearAlgebra
 import           Primitives.Cube
 import           Primitives.Square
-import           Lens.Micro.TH
+
+import           Matrix
 
 --State
 data Color
@@ -24,15 +31,26 @@ data Color
   | Blue
   deriving (Show)
 
-data MyState
-  = MyState { _squares     :: [Square]
-            , _cubes       :: [Cube]
-            , _color       :: Color
-            , _lastSecond  :: Double
-            , _squarePos   :: Vector Double
-            , _cameraPos   :: Vector Double
-            , _aspectRatio :: Double }
-  deriving (Show)
+type LookAt = (Double, Double)
+
+data Camera = Camera
+  { _cameraLookAt   :: LookAt
+  , _cameraPosition :: Vector3
+  } deriving (Show)
+
+initialCamera = Camera (0, 0) (vec3 0 0 10)
+
+makeLenses ''Camera
+
+data MyState = MyState
+  { _squares     :: [Square]
+  , _cubes       :: [Cube]
+  , _color       :: Color
+  , _lastSecond  :: Double
+  , _squarePos   :: Vector3
+  , _camera      :: Camera
+  , _aspectRatio :: Double
+  } deriving (Show)
 
 makeLenses ''MyState
 
@@ -42,7 +60,7 @@ initialState =
   , _cubes = []
   , _color = Green
   , _lastSecond = 0
-  , _squarePos = vector [0, 0, 0]
-  , _cameraPos = vector [0, 0, 10.0]
+  , _squarePos = vec3 0 0 0
+  , _camera = initialCamera
   , _aspectRatio = 4 / 3
   }

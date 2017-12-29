@@ -4,13 +4,14 @@ module Main
 
 import           Control.Monad
 import qualified Graphics.UI.GLFW      as GLFW
+import           Lens.Micro.Platform   ((%~), (&), (.~), (^.))
 import           Numeric.LinearAlgebra
-import           Lens.Micro.Platform ((&), (%~), (.~), (^.))
 
 import           Application
 import           Cmd
 import           Initializable
 import           Keyboard
+import           Matrix
 import           MyState
 import           Primitives.Cube
 import           Primitives.Square
@@ -56,7 +57,7 @@ gotTime a state = do
   if a > state ^. lastSecond
     then do
       send $ run swapColor
-      return $ state & lastSecond %~ (+1)
+      return $ state & lastSecond %~ (+ 1)
     else return state
 
 timeFail :: MyState -> Update MyState
@@ -65,30 +66,21 @@ timeFail state = do
   doPrint "Time: failed"
   return state
 
-moveSquare dir state =
-  return $ state & squarePos %~ (+ dir)
+moveSquare dir state = return $ state & squarePos %~ (+ dir)
 
-pressedArrow (KeyPress GLFW.Key'Up _ _) = run $ moveSquare $ vector [0, 0.2, 0]
-pressedArrow (KeyPress GLFW.Key'Down _ _) =
-  run $ moveSquare $ vector [0, -0.2, 0]
-pressedArrow (KeyPress GLFW.Key'Left _ _) =
-  run $ moveSquare $ vector [-0.2, 0, 0]
-pressedArrow (KeyPress GLFW.Key'Right _ _) =
-  run $ moveSquare $ vector [0.2, 0, 0]
+pressedArrow (KeyPress GLFW.Key'Up _ _) = run $ moveSquare $ vec3 0 0.2 0
+pressedArrow (KeyPress GLFW.Key'Down _ _) = run $ moveSquare $ vec3 0 (-0.2) 0
+pressedArrow (KeyPress GLFW.Key'Left _ _) = run $ moveSquare $ vec3 (-0.2) 0 0
+pressedArrow (KeyPress GLFW.Key'Right _ _) = run $ moveSquare $ vec3 0.2 0 0
 pressedArrow _ = noRun
 
-moveCamera dir state =
-  return $ state & cameraPos %~ (+ dir)
+moveCamera dir state = return $ state & camera . cameraPosition %~ (+ dir)
 
-pressedWASD (KeyPress GLFW.Key'W _ _) =
-  run $ moveCamera $ vector [0, 0, -0.2]
-pressedWASD (KeyPress GLFW.Key'S _ _) =
-  run $ moveCamera $ vector [0, 0, 0.2]
-pressedWASD (KeyPress GLFW.Key'A _ _) =
-  run $ moveCamera $ vector [-0.2, 0, 0]
-pressedWASD (KeyPress GLFW.Key'D _ _) =
-  run $ moveCamera $ vector [0.2, 0, 0]
-pressedWASD _ = noRun
+pressedWASD (KeyPress GLFW.Key'W _ _) = run $ moveCamera $ vec3 0 0 (-0.2)
+pressedWASD (KeyPress GLFW.Key'S _ _) = run $ moveCamera $ vec3 0 0 0.2
+pressedWASD (KeyPress GLFW.Key'A _ _) = run $ moveCamera $ vec3 (-0.2) 0 0
+pressedWASD (KeyPress GLFW.Key'D _ _) = run $ moveCamera $ vec3 0.2 0 0
+pressedWASD _                         = noRun
 
 mouseMoved x y state = do
   doPrint $ "Mouse moved " ++ show x ++ " " ++ show y

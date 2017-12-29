@@ -1,20 +1,29 @@
+{-# LANGUAGE DataKinds #-}
+
 module Matrix
-  ( Matrix
+  ( Matrix4
+  , Vector3
+  , vec3
   , perspective
   , identity
-  , mmult
   , withFloatMatrix
   , translate
+  , projection
   ) where
 
 import           Foreign.C.Types
 import           Foreign.Ptr
-import           Numeric.LinearAlgebra
-import qualified Numeric.LinearAlgebra.Devel as D
+import qualified Numeric.LinearAlgebra        as L
+import qualified Numeric.LinearAlgebra.Devel  as D
+import           Numeric.LinearAlgebra.Static
 
---type Matrix = Matrix Double
-perspective :: Double -> Double -> Double -> Double -> Matrix Double
-perspective near far fov aspect = build (4, 4) gen
+type Matrix4 = L 4 4
+
+type Vector3 = R 3
+
+--type Matrix4 = Matrix4 Double
+perspective :: Double -> Double -> Double -> Double -> Matrix4
+perspective near far fov aspect = build gen
   where
     gen i j =
       case (i, j) of
@@ -25,22 +34,19 @@ perspective near far fov aspect = build (4, 4) gen
         (3, 2) -> -1.0
         _      -> 0.0
 
-identity :: Int -> Matrix Double
-identity = ident
+identity :: Matrix4
+identity = eye
 
-translate :: Vector Double -> Matrix Double
-translate v = ident 4 + build (4, 4) gen
+translate :: Vector3 -> Matrix4
+translate v = t ||| col (v & 1.0)
   where
-    [x, y, z] = toList v
-    gen i j =
-      case (i, j) of
-        (0, 3) -> x
-        (1, 3) -> y
-        (2, 3) -> z
-        _      -> 0.0
+    (t, _) = splitCols eye
 
-mmult a b = a <> b
+projection :: Double -> Matrix4
+projection = perspective 0.1 100.0 (pi / 4.0)
 
-withFloatMatrix :: Matrix Double -> (D.MatrixOrder -> CInt -> CInt -> Ptr Float -> IO r) -> IO r
+withFloatMatrix ::
+     Matrix4 -> (D.MatrixOrder -> CInt -> CInt -> Ptr Float -> IO r) -> IO r
 withFloatMatrix m f = D.applyRaw singleM id (f (D.orderOf singleM))
-  where singleM = single m
+  where
+    singleM = L.single $ unwrap m
