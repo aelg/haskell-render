@@ -96,3 +96,13 @@ stopCaptureMouse = wrap stopCaptureMouse'
 send action = wrap $ send' action
   where
     send' action i a = return action `append` a
+
+keyPress key pressed notPressed = wrap $ keyPress' pressed notPressed
+  where
+    keyPress' pressed notPressed i a = do
+      press <- getKey (win $ machine i) key
+      case press of
+        GLFW.KeyState'Pressed -> return pressed `append` a
+        _                     -> return notPressed `append` a
+      where
+        press = getKey (win $ machine i) key

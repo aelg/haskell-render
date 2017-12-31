@@ -5,13 +5,14 @@ module View
 import           Graphics.Rendering.OpenGL    (($=))
 import qualified Graphics.Rendering.OpenGL    as GL
 import           Lens.Micro.Platform          ((^.))
-import           Matrix
 
 --import           Numeric.LinearAlgebra
 import           Numeric.LinearAlgebra.Static
 
 import           Drawable
+import           Matrix
 import           MyState
+import           Rotation
 import           Shaders
 import           Uniform
 
@@ -23,9 +24,11 @@ getColor Blue  = GL.Color3 0.0 0.0 (1.0 :: GL.GLfloat)
 setColor program color = setUniform program "color" $ getColor color
 
 viewMatrix :: Camera -> Matrix4
-viewMatrix camera = translation
+viewMatrix camera = rot <> translation
   where
     translation = translate . (* (-1)) $ camera ^. cameraPosition
+    rot = rotationMatrix $ mkXYRotation (-x) (-y)
+    (x, y) = camera ^. cameraRotation
 
 model :: Vector3 -> Matrix4
 model = translate

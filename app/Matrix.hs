@@ -9,8 +9,14 @@ module Matrix
   , withFloatMatrix
   , translate
   , projection
+  , normalize
+  , xHat
+  , yHat
+  , zHat
+  , cross
   ) where
 
+import           Data.Maybe
 import           Foreign.C.Types
 import           Foreign.Ptr
 import qualified Numeric.LinearAlgebra        as L
@@ -20,6 +26,12 @@ import           Numeric.LinearAlgebra.Static
 type Matrix4 = L 4 4
 
 type Vector3 = R 3
+
+xHat = vec3 1 0 0
+
+yHat = vec3 0 1 0
+
+zHat = vec3 0 0 1
 
 --type Matrix4 = Matrix4 Double
 perspective :: Double -> Double -> Double -> Double -> Matrix4
@@ -50,3 +62,8 @@ withFloatMatrix ::
 withFloatMatrix m f = D.applyRaw singleM id (f (D.orderOf singleM))
   where
     singleM = L.single $ unwrap m
+
+--normalize :: Vector3 -> Vector3
+normalize v = realToFrac a * v
+  where
+    a = 1.0 / norm_2 v

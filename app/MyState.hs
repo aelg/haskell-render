@@ -12,17 +12,17 @@ module MyState
   , camera
   , aspectRatio
   , Camera
-  , cameraLookAt
+  , cameraRotation
   , cameraPosition
   ) where
 
 import           Lens.Micro.TH
 
---import           Numeric.LinearAlgebra
 import           Primitives.Cube
 import           Primitives.Square
 
 import           Matrix
+import           Rotation
 
 --State
 data Color
@@ -31,12 +31,16 @@ data Color
   | Blue
   deriving (Show)
 
-type LookAt = (Double, Double)
-
 data Camera = Camera
-  { _cameraLookAt   :: LookAt
+  { _cameraRotation :: (Double, Double)
   , _cameraPosition :: Vector3
   } deriving (Show)
+
+newtype WASD =
+  WASD (Bool, Bool, Bool, Bool)
+  deriving (Show)
+
+makeLenses ''WASD
 
 initialCamera = Camera (0, 0) (vec3 0 0 10)
 

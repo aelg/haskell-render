@@ -2,11 +2,12 @@ module Main
   ( main
   ) where
 
+import           Control.Arrow
 import           Control.Monad
-import qualified Graphics.UI.GLFW      as GLFW
-import           Lens.Micro.Platform   ((%~), (&), (.~), (^.))
-import           Numeric.LinearAlgebra
+import qualified Graphics.UI.GLFW    as GLFW
+import           Lens.Micro.Platform ((%~), (&), (.~), (^.))
 
+--import           Numeric.LinearAlgebra
 import           Application
 import           Cmd
 import           Initializable
@@ -15,6 +16,7 @@ import           Matrix
 import           MyState
 import           Primitives.Cube
 import           Primitives.Square
+import           Rotation
 import           View
 
 newtype Action = Action
@@ -66,25 +68,40 @@ timeFail state = do
   doPrint "Time: failed"
   return state
 
-moveSquare dir state = return $ state & squarePos %~ (+ dir)
+moveSquare dir state = return $ state & squarePos %~ (+ (dir * 0.2))
 
-pressedArrow (KeyPress GLFW.Key'Up _ _) = run $ moveSquare $ vec3 0 0.2 0
-pressedArrow (KeyPress GLFW.Key'Down _ _) = run $ moveSquare $ vec3 0 (-0.2) 0
-pressedArrow (KeyPress GLFW.Key'Left _ _) = run $ moveSquare $ vec3 (-0.2) 0 0
-pressedArrow (KeyPress GLFW.Key'Right _ _) = run $ moveSquare $ vec3 0.2 0 0
-pressedArrow _ = noRun
+pressedArrow (KeyPress GLFW.Key'Up _ _)    = run $ moveSquare yHat
+pressedArrow (KeyPress GLFW.Key'Down _ _)  = run $ moveSquare (-yHat)
+pressedArrow (KeyPress GLFW.Key'Left _ _)  = run $ moveSquare (-xHat)
+pressedArrow (KeyPress GLFW.Key'Right _ _) = run $ moveSquare xHat
+pressedArrow _                             = noRun
 
-moveCamera dir state = return $ state & camera . cameraPosition %~ (+ dir)
+moveCamera dir state =
+  return $ state & camera . cameraPosition %~ (+ (dir * 0.2))
 
-pressedWASD (KeyPress GLFW.Key'W _ _) = run $ moveCamera $ vec3 0 0 (-0.2)
-pressedWASD (KeyPress GLFW.Key'S _ _) = run $ moveCamera $ vec3 0 0 0.2
-pressedWASD (KeyPress GLFW.Key'A _ _) = run $ moveCamera $ vec3 (-0.2) 0 0
-pressedWASD (KeyPress GLFW.Key'D _ _) = run $ moveCamera $ vec3 0.2 0 0
-pressedWASD _                         = noRun
+forward state = rotateV (negate zHat) $ mkXYRotation x y
+  where
+    (x, y) = state ^. camera . cameraRotation
 
-mouseMoved x y state = do
-  doPrint $ "Mouse moved " ++ show x ++ " " ++ show y
-  return state
+leftward state = cross (forward state) yHat
+
+opposite = negate
+
+pressedWASD (KeyPress GLFW.Key'W _ _) =
+  run $ \state -> moveCamera (forward state) state
+pressedWASD (KeyPress GLFW.Key'S _ _) =
+  run $ \state -> moveCamera (opposite . forward $ state) state
+pressedWASD (KeyPress GLFW.Key'D _ _) =
+  run $ \state -> moveCamera (leftward state) state
+pressedWASD (KeyPress GLFW.Key'A _ _) =
+  run $ \state -> moveCamera (opposite . leftward $ state) state
+pressedWASD _ = noRun
+
+mouseMoved x y state
+  | abs x < 30 && abs y < 30 =
+    return $! state & camera . cameraRotation %~
+    (first (+ (negate x * 0.0005)) >>> second (+ (negate y * 0.0005)))
+  | otherwise = return state
 
 resize' :: Int -> Int -> MyState -> Update MyState
 resize' w h state =

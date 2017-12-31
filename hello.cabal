@@ -53,6 +53,7 @@ executable hello
   other-modules:       View
                      , MyState
                      , Matrix
+                     , Rotation
                      , Uniform
                      , Primitives.Square
                      , Primitives.Cube

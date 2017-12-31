@@ -6,6 +6,7 @@ module Keyboard
   , noModifiers
   , keyPressed
   , noActions
+  , getKey
   ) where
 
 import           Data.IORef
@@ -52,3 +53,5 @@ keyPressed addAction actions win key _ state modifiers =
     case M.lookup (KeyPress key state modifiers) a of
       Just action -> addAction $ action $ KeyPress key state modifiers
       Nothing     -> return ()
+
+getKey = GLFW.getKey
