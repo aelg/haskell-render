@@ -15,9 +15,9 @@ void main(){
   vec3 l = normalize( LightDirection_cameraspace );
 
   float cosTheta = clamp(dot( n,l ), 0 ,1);
-  float distance = dot(LightDirection_cameraspace, LightDirection_cameraspace)/1.0;
+  float distance = dot(LightDirection_cameraspace, LightDirection_cameraspace)/10000.0;
 
-  vec3 AmbientColor = fragmentColor * 0.3;
+  vec3 AmbientColor = fragmentColor * 0.5;
   vec3 DiffuseColor = (fragmentColor * cosTheta * 0.5)/distance;
 
   color = DiffuseColor + AmbientColor;

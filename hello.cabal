@@ -41,7 +41,7 @@ library
 executable hello
   hs-source-dirs:      app
   main-is:             Main.hs
-  ghc-options:         -threaded -rtsopts -with-rtsopts=-N -fPIC
+  ghc-options:         -fPIC
   build-depends:       base
                      , hello
                      , GLFW-b

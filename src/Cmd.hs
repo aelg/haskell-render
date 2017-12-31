@@ -24,7 +24,7 @@ import           System.Exit      (ExitCode (..), exitSuccess)
 import qualified Window           as W
 
 newtype Cmd a = Cmd
-  { runCmd :: Input a -> [a] -> IO [a]
+  { runCmd :: Input a -> IO [a]
   }
 
 data Input a = Input
@@ -33,12 +33,10 @@ data Input a = Input
   }
 
 instance Monoid (Cmd a) where
-  mempty = Cmd $ \m actions -> return actions
-  mappend a b = Cmd $ \i actions -> runCmd a i actions >>= runCmd b i
+  mempty = Cmd $ const (return [])
+  a `mappend` b = Cmd $ \i -> (++) <$> runCmd a i <*> runCmd b i
 
-wrap f = State (Cmd f) ()
-
-append f a = fmap (: a) f
+newCmd f = State (Cmd f) ()
 
 shutdown :: GLFW.Window -> IO ()
 shutdown win = do
@@ -46,64 +44,66 @@ shutdown win = do
   GLFW.terminate
   exitSuccess
 
-doShutdown = wrap doShutdown'
+doShutdown = newCmd doShutdown'
   where
-    doShutdown' i a = shutdown (window i) >> return a
+    doShutdown' i = shutdown (window i) >> return []
     window = win . machine
 
-doPrint s = wrap $ doPrint' s
+doPrint s = newCmd $ doPrint' s
   where
-    doPrint' s i a = putStrLn s >> return a
+    doPrint' s i = putStrLn s >> return []
 
-runIO io = wrap $ runIO' io
+runIO :: IO a -> State (Cmd a) ()
+runIO io = newCmd $ runIO' io
   where
-    runIO' io i a = io `append` a
+    runIO' io i = (: []) <$> io
 
 keyPresses :: [Keyboard.KeyAction a] -> State (Cmd a) ()
-keyPresses keys = wrap $ keyPresses' keys
+keyPresses keys = newCmd $ keyPresses' keys
   where
-    keyPresses' keys i a =
-      Keyboard.keyActions (keyMap $ machine i) keys >> return a
+    keyPresses' keys i =
+      Keyboard.keyActions (keyMap $ machine i) keys >> return []
 
-getTime fail success = wrap $ getTime' fail success
+getTime :: a -> (Double -> a) -> State (Cmd a) ()
+getTime fail success = newCmd $ getTime' fail success
   where
-    getTime' fail success i a = do
+    getTime' fail success i = do
       time <- GLFW.getTime
-      return (maybe fail success time) `append` a
+      return [maybe fail success time]
 
 resize :: (Int -> Int -> a) -> State (Cmd a) ()
-resize action = wrap $ resize' action
+resize action = newCmd $ resize' action
   where
-    resize' action i a =
+    resize' action i =
       updateWindowSizeCallback' i (\w h -> (addAction' i $ action w h)) >>
-      return a
+      return []
     updateWindowSizeCallback' = updateWindowSize . callbackUpdater
     addAction' i = addAction $ machine i
 
 captureMouse :: (Double -> Double -> a) -> State (Cmd a) ()
-captureMouse action = wrap $ captureMouse' action
+captureMouse action = newCmd $ captureMouse' action
   where
-    captureMouse' action i a =
+    captureMouse' action i =
       Mouse.captureMouse
         (win $ machine i)
         (\x y -> (addAction (machine i) $ action x y)) >>
-      return a
+      return []
 
 stopCaptureMouse :: State (Cmd a) ()
-stopCaptureMouse = wrap stopCaptureMouse'
+stopCaptureMouse = newCmd stopCaptureMouse'
   where
-    stopCaptureMouse' i a = Mouse.freeMouse (win $ machine i) >> return a
+    stopCaptureMouse' i = Mouse.freeMouse (win $ machine i) >> return []
 
-send action = wrap $ send' action
+send action = newCmd $ send' action
   where
-    send' action i a = return action `append` a
+    send' action i = return [action]
 
-keyPress key pressed notPressed = wrap $ keyPress' pressed notPressed
+keyPress key pressed notPressed = newCmd $ keyPress' pressed notPressed
   where
-    keyPress' pressed notPressed i a = do
+    keyPress' pressed notPressed i = do
       press <- getKey (win $ machine i) key
       case press of
-        GLFW.KeyState'Pressed -> return pressed `append` a
-        _                     -> return notPressed `append` a
+        GLFW.KeyState'Pressed -> return [pressed]
+        _                     -> return [notPressed]
       where
         press = getKey (win $ machine i) key

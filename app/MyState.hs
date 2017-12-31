@@ -7,10 +7,13 @@ module MyState
   , squares
   , cubes
   , color
-  , lastSecond
+  , nextSecond
   , cubePos
   , camera
   , aspectRatio
+  , lastTime
+  , movementSpeed
+  , spacing
   , Camera
   , cameraRotation
   , cameraPosition
@@ -42,18 +45,21 @@ newtype WASD =
 
 makeLenses ''WASD
 
-initialCamera = Camera (0, 0) (vec3 0 0 10)
+initialCamera = Camera (0, 0) (vec3 150 150 200)
 
 makeLenses ''Camera
 
 data MyState = MyState
-  { _squares     :: [Square]
-  , _cubes       :: [Cube]
-  , _color       :: Color
-  , _lastSecond  :: Double
-  , _cubePos     :: Vector3
-  , _camera      :: Camera
-  , _aspectRatio :: Double
+  { _squares       :: [Square]
+  , _cubes         :: [Cube]
+  , _color         :: Color
+  , _nextSecond    :: Double
+  , _cubePos       :: Vector3
+  , _camera        :: Camera
+  , _aspectRatio   :: Double
+  , _lastTime      :: Double
+  , _movementSpeed :: Double
+  , _spacing       :: Double
   } deriving (Show)
 
 makeLenses ''MyState
@@ -63,8 +69,11 @@ initialState =
   { _squares = []
   , _cubes = []
   , _color = Green
-  , _lastSecond = 0
+  , _nextSecond = 0
   , _cubePos = vec3 0 0 0
   , _camera = initialCamera
   , _aspectRatio = 4 / 3
+  , _lastTime = 0
+  , _movementSpeed = 80
+  , _spacing = 0
   }

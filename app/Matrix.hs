@@ -55,7 +55,7 @@ translate v = t ||| col (v & 1.0)
     (t, _) = splitCols eye
 
 projection :: Double -> Matrix4
-projection = perspective 0.1 100.0 (pi / 4.0)
+projection = perspective 0.1 10000.0 (pi / 4.0)
 
 withFloatMatrix ::
      Matrix4 -> (D.MatrixOrder -> CInt -> CInt -> Ptr Float -> IO r) -> IO r

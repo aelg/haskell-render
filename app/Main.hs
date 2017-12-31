@@ -53,28 +53,27 @@ swapColor state = return $ state & color %~ blueGreen
 askTime :: Update ()
 askTime = getTime (run timeFail) (run1 gotTime)
 
-cameraMovement = do
-  keyPress GLFW.Key'W (run $ moveCamera forward) noRun
-  keyPress GLFW.Key'S (run $ moveCamera (negate . forward)) noRun
-  keyPress GLFW.Key'A (run $ moveCamera leftward) noRun
-  keyPress GLFW.Key'D (run $ moveCamera (negate . leftward)) noRun
+cameraMovement timeDiff = do
+  keyPress GLFW.Key'W (run $ moveCamera timeDiff forward) noRun
+  keyPress GLFW.Key'S (run $ moveCamera timeDiff (negate . forward)) noRun
+  keyPress GLFW.Key'A (run $ moveCamera timeDiff leftward) noRun
+  keyPress GLFW.Key'D (run $ moveCamera timeDiff (negate . leftward)) noRun
 
-cubeMovement = do
-  keyPress GLFW.Key'Up (run $ moveSquare yHat) noRun
-  keyPress GLFW.Key'Down (run $ moveSquare (-yHat)) noRun
-  keyPress GLFW.Key'Right (run $ moveSquare xHat) noRun
-  keyPress GLFW.Key'Left (run $ moveSquare (-xHat)) noRun
+cubeMovement timeDiff = do
+  keyPress GLFW.Key'Up (run $ moveSquare timeDiff yHat) noRun
+  keyPress GLFW.Key'Down (run $ moveSquare timeDiff (-yHat)) noRun
+  keyPress GLFW.Key'Right (run $ moveSquare timeDiff xHat) noRun
+  keyPress GLFW.Key'Left (run $ moveSquare timeDiff (-xHat)) noRun
+
+updateSpacing t = ((sin (t / 2) + 1) * 5) + 2
 
 gotTime :: Double -> MyState -> Update MyState
-gotTime a state = do
+gotTime t state = do
   askTime
-  cameraMovement
-  cubeMovement
-  if a > state ^. lastSecond
-    then do
-      send $ run swapColor
-      return $ state & lastSecond %~ (+ 1)
-    else return state
+  let timeDiff = t - state ^. lastTime
+  cameraMovement timeDiff
+  cubeMovement timeDiff
+  return $ state & lastTime .~ t & spacing .~ updateSpacing t
 
 timeFail :: MyState -> Update MyState
 timeFail state = do
@@ -82,10 +81,13 @@ timeFail state = do
   doPrint "Time: failed"
   return state
 
-moveSquare dir state = return $ state & cubePos %~ (+ (dir * 0.2))
+moveSquare distance dir state =
+  return $ state & cubePos %~
+  (+ (dir * realToFrac (state ^. movementSpeed) * realToFrac distance))
 
-moveCamera dir state =
-  return $ state & camera . cameraPosition %~ (+ (dir state * 0.2))
+moveCamera distance dirF state =
+  return $ state & camera . cameraPosition %~
+  (+ (dirF state * realToFrac (state ^. movementSpeed) * realToFrac distance))
 
 forward state = rotateV (negate zHat) $ mkXYRotation x y
   where

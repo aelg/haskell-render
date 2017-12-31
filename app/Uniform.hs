@@ -1,6 +1,7 @@
 module Uniform
   ( setUniform
   , setUniform4fv
+  , getUniform
   ) where
 
 import           Foreign.Marshal
@@ -15,8 +16,10 @@ setUniform program name value = do
   uniform <- GL.uniformLocation program name
   GL.uniform uniform $= value
 
-setUniform4fv :: GL.Program -> String -> Matrix4 -> IO ()
-setUniform4fv program name value = do
-  GL.UniformLocation uniform <- GL.uniformLocation program name
+setUniform4fv :: GL.UniformLocation -> Matrix4 -> IO ()
+setUniform4fv (GL.UniformLocation uniform) value =
   withFloatMatrix value $ \order rows cols ptr ->
     GLF.glUniformMatrix4fv uniform 1 (fromBool (order == D.RowMajor)) ptr
+
+getUniform :: GL.Program -> String -> IO GL.UniformLocation
+getUniform = GL.uniformLocation

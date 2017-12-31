@@ -47,17 +47,12 @@ setupCallbacks m = do
     (Just $ Keyboard.keyPressed (addAction m) (keyMap m))
   return $ CallbackUpdater wSize wClose
 
-readActions ::
-     Cmd action
-  -> Machine action
-  -> CallbackUpdater
-  -> ([action] -> state)
-  -> IO state
-readActions cmds m c f = do
+readActions :: Cmd action -> Machine action -> CallbackUpdater -> IO [action]
+readActions cmds m c = do
   a <- GL.get (actions m)
   actions m $= []
-  b <- runCmd cmds (Cmd.Input m c) a
-  return $ f b
+  b <- runCmd cmds (Cmd.Input m c)
+  return (a ++ b)
 
 loop ::
      Machine action
@@ -67,8 +62,8 @@ loop ::
   -> IO ()
 loop m c application (State cmds state) = do
   GLFW.pollEvents
-  State newCmds newState <-
-    readActions cmds m c $ M.foldM (flip (update application)) state
+  actions <- readActions cmds m c
+  let State newCmds newState = M.foldM (flip (update application)) state actions
   view application (shaders m) newState
   GLFW.swapBuffers $ win m
   loop m c application $ State newCmds newState

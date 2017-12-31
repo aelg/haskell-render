@@ -2,8 +2,7 @@ module State
   ( State(..)
   ) where
 
-data Monoid b =>
-     State b a =
+data State b a =
   State b
         a
 

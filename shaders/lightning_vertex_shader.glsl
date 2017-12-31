@@ -5,7 +5,7 @@ layout(location = 1) in vec3 vertexColor;
 layout(location = 2) in vec3 vertexNormal_modelspace;
 layout(location = 3) in vec2 uv_vertex;
 
-uniform mat4 MVP;
+uniform mat4 P;
 uniform mat4 M;
 uniform mat4 V;
 uniform vec3 LightPosition_worldspace;
@@ -24,7 +24,7 @@ out vec2 offset;
 out float time;
 
 void main(){
-    gl_Position = MVP * vec4(vertexPosition_modelspace,1);
+    gl_Position = P * V * M * vec4(vertexPosition_modelspace,1);
     // Position of the vertex, in worldspace : M * position
     Position_worldspace = (M * vec4(vertexPosition_modelspace,1)).xyz;
 
