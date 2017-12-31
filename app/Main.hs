@@ -53,9 +53,23 @@ swapColor state = return $ state & color %~ blueGreen
 askTime :: Update ()
 askTime = getTime (run timeFail) (run1 gotTime)
 
+cameraMovement = do
+  keyPress GLFW.Key'W (run $ moveCamera forward) noRun
+  keyPress GLFW.Key'S (run $ moveCamera (negate . forward)) noRun
+  keyPress GLFW.Key'A (run $ moveCamera leftward) noRun
+  keyPress GLFW.Key'D (run $ moveCamera (negate . leftward)) noRun
+
+cubeMovement = do
+  keyPress GLFW.Key'Up (run $ moveSquare yHat) noRun
+  keyPress GLFW.Key'Down (run $ moveSquare (-yHat)) noRun
+  keyPress GLFW.Key'Right (run $ moveSquare xHat) noRun
+  keyPress GLFW.Key'Left (run $ moveSquare (-xHat)) noRun
+
 gotTime :: Double -> MyState -> Update MyState
 gotTime a state = do
   askTime
+  cameraMovement
+  cubeMovement
   if a > state ^. lastSecond
     then do
       send $ run swapColor
@@ -68,34 +82,16 @@ timeFail state = do
   doPrint "Time: failed"
   return state
 
-moveSquare dir state = return $ state & squarePos %~ (+ (dir * 0.2))
-
-pressedArrow (KeyPress GLFW.Key'Up _ _)    = run $ moveSquare yHat
-pressedArrow (KeyPress GLFW.Key'Down _ _)  = run $ moveSquare (-yHat)
-pressedArrow (KeyPress GLFW.Key'Left _ _)  = run $ moveSquare (-xHat)
-pressedArrow (KeyPress GLFW.Key'Right _ _) = run $ moveSquare xHat
-pressedArrow _                             = noRun
+moveSquare dir state = return $ state & cubePos %~ (+ (dir * 0.2))
 
 moveCamera dir state =
-  return $ state & camera . cameraPosition %~ (+ (dir * 0.2))
+  return $ state & camera . cameraPosition %~ (+ (dir state * 0.2))
 
 forward state = rotateV (negate zHat) $ mkXYRotation x y
   where
     (x, y) = state ^. camera . cameraRotation
 
-leftward state = cross (forward state) yHat
-
-opposite = negate
-
-pressedWASD (KeyPress GLFW.Key'W _ _) =
-  run $ \state -> moveCamera (forward state) state
-pressedWASD (KeyPress GLFW.Key'S _ _) =
-  run $ \state -> moveCamera (opposite . forward $ state) state
-pressedWASD (KeyPress GLFW.Key'D _ _) =
-  run $ \state -> moveCamera (leftward state) state
-pressedWASD (KeyPress GLFW.Key'A _ _) =
-  run $ \state -> moveCamera (opposite . leftward $ state) state
-pressedWASD _ = noRun
+leftward state = negate $ cross (forward state) yHat
 
 mouseMoved x y state
   | abs x < 30 && abs y < 30 =
@@ -117,12 +113,6 @@ keymap =
     , KeyState <$> [GLFW.Key'Space] <*>
       [GLFW.KeyState'Pressed, GLFW.KeyState'Repeating] <*>
       [\_ -> run swapColor]
-    , KeyState <$> [GLFW.Key'Up, GLFW.Key'Down, GLFW.Key'Right, GLFW.Key'Left] <*>
-      [GLFW.KeyState'Pressed, GLFW.KeyState'Repeating] <*>
-      [pressedArrow]
-    , KeyState <$> [GLFW.Key'W, GLFW.Key'A, GLFW.Key'S, GLFW.Key'D] <*>
-      [GLFW.KeyState'Pressed, GLFW.KeyState'Repeating] <*>
-      [pressedWASD]
     ]
 
 initialAction :: MyState -> Action

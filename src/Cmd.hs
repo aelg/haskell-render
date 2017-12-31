@@ -11,6 +11,7 @@ module Cmd
   , doShutdown
   , getTime
   , send
+  , keyPress
   ) where
 
 import           CallbackUpdater

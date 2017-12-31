@@ -8,7 +8,7 @@ module MyState
   , cubes
   , color
   , lastSecond
-  , squarePos
+  , cubePos
   , camera
   , aspectRatio
   , Camera
@@ -51,7 +51,7 @@ data MyState = MyState
   , _cubes       :: [Cube]
   , _color       :: Color
   , _lastSecond  :: Double
-  , _squarePos   :: Vector3
+  , _cubePos     :: Vector3
   , _camera      :: Camera
   , _aspectRatio :: Double
   } deriving (Show)
@@ -64,7 +64,7 @@ initialState =
   , _cubes = []
   , _color = Green
   , _lastSecond = 0
-  , _squarePos = vec3 0 0 0
+  , _cubePos = vec3 0 0 0
   , _camera = initialCamera
   , _aspectRatio = 4 / 3
   }

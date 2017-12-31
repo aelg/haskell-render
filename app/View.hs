@@ -46,7 +46,7 @@ view shaders state = do
   setColor program $ state ^. color
   setUniform program "useVertexColor" (1 :: GL.GLuint)
   setUniform program "LightPosition_worldspace" lightPosition
-  let m = model $ state ^. squarePos
+  let m = model $ state ^. cubePos
       v = viewMatrix $ state ^. camera
       p = projection $ state ^. aspectRatio
       mvp = p <> v <> m
