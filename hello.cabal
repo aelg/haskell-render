@@ -57,6 +57,7 @@ executable hello
                      , Uniform
                      , Primitives.Square
                      , Primitives.Cube
+                     , Primitives.Terrain
   default-language:    Haskell2010
   extra-libraries:     cblas
 

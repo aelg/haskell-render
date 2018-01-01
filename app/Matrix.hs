@@ -14,6 +14,8 @@ module Matrix
   , yHat
   , zHat
   , cross
+  , vector3ToFloatList
+  , unwrap
   ) where
 
 import           Data.Maybe
@@ -63,7 +65,15 @@ withFloatMatrix m f = D.applyRaw singleM id (f (D.orderOf singleM))
   where
     singleM = L.single $ unwrap m
 
+withFloatVector :: Vector3 -> (CInt -> Ptr Float -> IO r) -> IO r
+withFloatVector m = D.applyRaw singleV id
+  where
+    singleV = L.single $ unwrap m
+
 --normalize :: Vector3 -> Vector3
 normalize v = realToFrac a * v
   where
     a = 1.0 / norm_2 v
+
+vector3ToFloatList :: Vector3 -> [Float]
+vector3ToFloatList = L.toList . L.single . unwrap

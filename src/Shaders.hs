@@ -22,6 +22,7 @@ data ShaderProgram
   = Simple
   | SimpleFragment
   | Normal
+  | Wireframe
   deriving (Generic, Eq, Ord)
 
 instance Hashable ShaderProgram
@@ -37,11 +38,21 @@ simpleShader =
 
 normalVertexFile = FileSource "shaders/lightning_vertex_shader.glsl"
 
+normalGeometryFile = FileSource "shaders/wireframe_geometry_shader.glsl"
+
 normalFragmentFile = FileSource "shaders/fragment_shader.glsl"
+
+linesFragmentFile = FileSource "shaders/lines_fragment_shader.glsl"
 
 normalShader =
   [ ShaderInfo GL.VertexShader normalVertexFile
   , ShaderInfo GL.FragmentShader normalFragmentFile
+  ]
+
+wireframeShader =
+  [ ShaderInfo GL.VertexShader normalVertexFile
+  , ShaderInfo GL.GeometryShader normalGeometryFile
+  , ShaderInfo GL.FragmentShader linesFragmentFile
   ]
 
 simpleFragmentShader =
@@ -53,6 +64,7 @@ shaders =
   [ (Simple, simpleShader)
   , (Normal, normalShader)
   , (SimpleFragment, simpleFragmentShader)
+  , (Wireframe, wireframeShader)
   ]
 
 activateProgram :: Shaders -> ShaderProgram -> IO GL.Program

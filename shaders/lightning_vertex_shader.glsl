@@ -22,11 +22,14 @@ out vec3 Normal_cameraspace;
 out vec2 UV;
 out vec2 offset;
 out float time;
+out vec4 normal;
 
 void main(){
     gl_Position = P * V * M * vec4(vertexPosition_modelspace,1);
     // Position of the vertex, in worldspace : M * position
     Position_worldspace = (M * vec4(vertexPosition_modelspace,1)).xyz;
+
+    normal = (P * V * M * vec4(1*(vertexNormal_modelspace+vertexPosition_modelspace),1));
 
     // Vector that goes from the vertex to the camera, in camera space.
     // In camera space, the camera is at the origin (0,0,0).
@@ -39,6 +42,7 @@ void main(){
 
     // Normal of the the vertex, in camera space
     Normal_cameraspace = ( V * M * vec4(vertexNormal_modelspace,0)).xyz; // Only correct if ModelMatrix does not scale the model ! Use its inverse transpose if not.
+
 
     // Distance from the vertex to light.
     fragmentColor = useVertexColor ? vertexColor : color;//vec3((vertexPosition_modelspace + 1)/2);

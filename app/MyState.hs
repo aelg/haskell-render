@@ -6,6 +6,7 @@ module MyState
   , initialState
   , squares
   , cubes
+  , terrain
   , color
   , nextSecond
   , cubePos
@@ -23,6 +24,7 @@ import           Lens.Micro.TH
 
 import           Primitives.Cube
 import           Primitives.Square
+import           Primitives.Terrain
 
 import           Matrix
 import           Rotation
@@ -45,13 +47,14 @@ newtype WASD =
 
 makeLenses ''WASD
 
-initialCamera = Camera (0, 0) (vec3 150 150 200)
+initialCamera = Camera (0, 0) (vec3 0 3 10)
 
 makeLenses ''Camera
 
 data MyState = MyState
   { _squares       :: [Square]
   , _cubes         :: [Cube]
+  , _terrain       :: [Terrain]
   , _color         :: Color
   , _nextSecond    :: Double
   , _cubePos       :: Vector3
@@ -68,6 +71,7 @@ initialState =
   MyState
   { _squares = []
   , _cubes = []
+  , _terrain = []
   , _color = Green
   , _nextSecond = 0
   , _cubePos = vec3 0 0 0

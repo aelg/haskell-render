@@ -6,6 +6,7 @@ module Rotation
   , rotate
   , mkRotation
   , mkXYRotation
+  , mkXYRotationCamera
   , rotateV
   ) where
 
@@ -50,10 +51,15 @@ rotationMatrix q = eye + 2 * m
       row (vec4 (i * k - j * r) (j * k + i * r) (-i * i - j * j) 0) ===
       row (vec4 0 0 0 0)
 
-mkXYRotation x y = q2 `rotate` q1
+mkXYRotationCamera x y = q2 `rotate` q1
   where
     q1 = mkRotation x yHat
     q2 = mkRotation y xHat
+
+mkXYRotation x y = q2 `rotate` q1
+  where
+    q1 = mkRotation y xHat
+    q2 = mkRotation x yHat
 
 conj :: Quaternion -> Quaternion
 conj q = q * vec4 1 (-1) (-1) (-1)

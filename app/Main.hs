@@ -96,7 +96,7 @@ forward state = rotateV (negate zHat) $ mkXYRotation x y
 leftward state = negate $ cross (forward state) yHat
 
 mouseMoved x y state
-  | abs x < 30 && abs y < 30 =
+  | abs x < 300 && abs y < 300 =
     return $! state & camera . cameraRotation %~
     (first (+ (negate x * 0.0005)) >>> second (+ (negate y * 0.0005)))
   | otherwise = return state
@@ -126,7 +126,10 @@ initialAction state =
 setup = do
   square <- create
   cube <- create
-  let state = initialState & squares .~ [square] & cubes .~ [cube]
+  terrain' <- create
+  let state =
+        initialState & squares .~ [square] & cubes .~ [cube] & terrain .~
+        [terrain']
   return $ initialAction state
 
 initState = do

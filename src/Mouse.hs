@@ -16,6 +16,7 @@ cursorPosCallback f win x y = do
 captureMouse :: GLFW.Window -> (Double -> Double -> IO ()) -> IO ()
 captureMouse win f = do
   GLFW.setCursorInputMode win GLFW.CursorInputMode'Disabled
+  GLFW.setCursorPos win 0 0
   GLFW.setCursorPosCallback win (Just (cursorPosCallback f))
 
 freeMouse win = do
