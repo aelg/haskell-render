@@ -50,7 +50,7 @@ drawCube mU pU state pos = do
 grid space =
   map
     (* realToFrac space)
-    (vec3 <$> [-10 .. 10] <*> [-10 .. 10] <*> [-10 .. 10])
+    (vec3 <$> [-5 .. 5] <*> [-5 .. 5] <*> [-5 .. 5])
 
 drawCubes shaders state = do
   program <- activateProgram shaders Normal

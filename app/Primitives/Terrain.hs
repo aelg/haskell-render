@@ -39,7 +39,11 @@ rgbToV :: Int -> Int -> Int -> Vertex3 GLfloat
 rgbToV r g b =
   Vertex3 (fromIntegral r / 255) (fromIntegral g / 255) (fromIntegral b / 255)
 
-heightFunc (x, z) = 0.01 * sin (x * 10 * 2 * pi) * cos (z * 10 * 2 * pi)
+fromCenter x z = sqrt ((0.5-x)**2 + (0.5-z)**2)
+
+sigmoid x = 1 / exp (1/max 0.001 (1-x*2)-1)
+
+heightFunc (x, z) = (0.01 * sin (x * 10 * 2 * pi) * cos (z * 10 * 2 * pi)) * sigmoid (fromCenter x z)
 
 normalF :: (Float, Float) -> Vertex3 GLfloat
 normalF (x, z) = Vertex3 nx ny nz
@@ -56,7 +60,7 @@ instance Initializable Terrain where
     terrain <- genObjectName -- VAO
     bindVertexArrayObject $= Just terrain
     let gridCount = 200 :: GLuint
-        gridSize = 1000
+        gridSize = 10000
         grid =
           map floatGrid $
           (,) <$> [0 .. (gridCount - 1)] <*> [0 .. (gridCount - 1)] :: [( Float

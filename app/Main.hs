@@ -58,6 +58,8 @@ cameraMovement timeDiff = do
   keyPress GLFW.Key'S (run $ moveCamera timeDiff (negate . forward)) noRun
   keyPress GLFW.Key'A (run $ moveCamera timeDiff leftward) noRun
   keyPress GLFW.Key'D (run $ moveCamera timeDiff (negate . leftward)) noRun
+  keyPress GLFW.Key'Space (run $ moveCamera timeDiff upward) noRun
+  keyPress GLFW.Key'C (run $ moveCamera timeDiff (negate . upward)) noRun
 
 cubeMovement timeDiff = do
   keyPress GLFW.Key'Up (run $ moveSquare timeDiff yHat) noRun
@@ -95,10 +97,12 @@ forward state = rotateV (negate zHat) $ mkXYRotation x y
 
 leftward state = negate $ cross (forward state) yHat
 
+upward state = yHat
+
 mouseMoved x y state
   | abs x < 300 && abs y < 300 =
     return $! state & camera . cameraRotation %~
-    (first (+ (negate x * 0.0005)) >>> second (+ (negate y * 0.0005)))
+    (first (+ (negate x * 0.0001)) >>> second (+ (negate y * 0.0001)))
   | otherwise = return state
 
 resize' :: Int -> Int -> MyState -> Update MyState
